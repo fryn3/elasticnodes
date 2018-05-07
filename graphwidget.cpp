@@ -5,7 +5,7 @@ GraphWidget::GraphWidget(QWidget *parent)
 {
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
-    scene->setSceneRect(0, 0, 500, 500);
+    scene->setSceneRect(-200, -200, 500, 500);
     setScene(scene);
     setCacheMode(CacheBackground);
     setViewportUpdateMode(BoundingRectViewportUpdate);
@@ -16,9 +16,19 @@ GraphWidget::GraphWidget(QWidget *parent)
 
 void GraphWidget::addNode()
 {
+    static int x = 0, y = -100;
     Node *node1 = new Node(this);
     scene()->addItem(node1);
-    node1->setPos(2 * Node::Radius * Node::idStatic(), 2 * Node::Radius * Node::idStatic());
+    switch ((Node::idStatic() - 1) % 2) {
+    case 0:
+        x -= 2 * Node::Radius + 10;
+        y += 2 * Node::Radius + 10;
+        break;
+    case 1:
+        x += 2 * Node::Radius + 10;
+        break;
+    }
+    node1->setPos(x, y);
 }
 
 void GraphWidget::keyPressEvent(QKeyEvent *event)

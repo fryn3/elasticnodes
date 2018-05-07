@@ -61,6 +61,8 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::white));
     painter->setPen(_pen);
     painter->drawEllipse(-Radius, -Radius, 2 * Radius, 2 * Radius);
+    painter->drawText(-Radius / 5, 0, QString("%1").arg(id));
+    painter->drawText(-Radius / 5, 0 + 10, QString("%1").arg(id));
 }
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)

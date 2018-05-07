@@ -29,7 +29,6 @@ private:
     GraphWidget *grafViewScene;
     Node *_source;  // сохраняет вершину при нажатии на кнопку "Соединить"
     bool connFlag;
-    bool missSelectionChanged;
 signals:
 
 public slots:

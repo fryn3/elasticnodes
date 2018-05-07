@@ -10,7 +10,6 @@ QT_BEGIN_NAMESPACE
 class QGraphicsSceneMouseEvent;
 QT_END_NAMESPACE
 
-//! [0]
 class Node : public QGraphicsItem
 {
 public:
@@ -40,6 +39,5 @@ private:
     GraphWidget *graph;
     static uint _idStatic;
 };
-//! [0]
 
 #endif // NODE_H
