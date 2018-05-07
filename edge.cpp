@@ -55,9 +55,12 @@ void Edge::adjust()
             sourcePoint = destPoint = line.p1();
         }
     } else {
+        sourcePoint = mapFromItem(source, 0, Node::Radius);
+        destPoint = mapFromItem(source, Node::Radius, 0);
         prepareGeometryChange();
     }
 }
+
 QPolygonF Edge::nPolygonMath() const {
     QPolygonF nPolygon;
     if (source != dest) {
@@ -72,6 +75,11 @@ QPolygonF Edge::nPolygonMath() const {
                  << line.p1() + offset2
                  << line.p2() + offset2
                  << line.p2() + offset1;
+    } else {
+        nPolygon << mapFromItem(source, -Node::Radius, -Node::Radius)
+                 << mapFromItem(source, Node::Radius, -Node::Radius)
+                 << mapFromItem(source, Node::Radius, Node::Radius)
+                 << mapFromItem(source, -Node::Radius, Node::Radius);
     }
     return nPolygon;
 }
@@ -116,6 +124,9 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
         painter->drawPolygon(QPolygonF() << line.p2() << destArrowP1 << destArrowP2);
     } else {
-        // Надо реализовать
+        painter->drawArc(mapFromItem(source, Node::Radius, 0).x(),
+                         mapFromItem(source, Node::Radius, 0).y(),
+                         2 * Node::Radius, 2 * Node::Radius, 16 * -90, 16 * 180);
+
     }
 }
