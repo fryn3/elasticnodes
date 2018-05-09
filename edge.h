@@ -20,7 +20,6 @@ public:
     int type() const override { return Type; }
 
 protected:
-    QPolygonF nPolygonMath() const;
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
@@ -28,6 +27,7 @@ private:
     Node *source, *dest;
     QPointF sourcePoint;
     QPointF destPoint;
+    QPointF textPoint;
     qreal arrowSize;
     static uint _idStatic;
 };
