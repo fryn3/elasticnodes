@@ -12,7 +12,9 @@
 #include <QLineEdit>
 #include <QMap>
 #include <QMultiMap>
-
+#include <QSpacerItem>
+#include <QTableWidget>
+#include <QHeaderView>
 #include "graphwidget.h"
 
 
@@ -23,9 +25,9 @@ public:
     explicit Win(QWidget *parent = nullptr);
     ~Win();
 private:
-    QPushButton *btnCreateNode;
-    QPushButton *btnConnectNode;
-    QPushButton *btnDelete;
+    QPushButton *btnSelectChoices;
+    QTableWidget *table;
+    QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
     GraphWidget *grafViewScene;
     Node *_source;  // сохраняет вершину при нажатии на кнопку "Соединить"
     bool connFlag;

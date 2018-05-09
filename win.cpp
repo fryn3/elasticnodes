@@ -1,22 +1,70 @@
 #include "win.h"
-
+#include "QDebug"
 Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
 {
-    QVBoxLayout * mainLayout = new QVBoxLayout(this);
+    QHBoxLayout *mainLayout = new QHBoxLayout(this);
     {
-        QHBoxLayout *layout = new QHBoxLayout(parent);
-        btnCreateNode = new QPushButton("Добавить вершину", this);
-        layout->addWidget(btnCreateNode);
-        btnConnectNode = new QPushButton("Соединить", this);
-        btnConnectNode->setEnabled(false);
-        layout->addWidget(btnConnectNode);
-        btnDelete = new QPushButton("Удалить", this);
-        btnDelete->setEnabled(false);
-        layout->addWidget(btnDelete);
-        mainLayout->addLayout(layout);
+        QVBoxLayout *leftLayout = new QVBoxLayout(parent);
+        {
+            QHBoxLayout *layout = new QHBoxLayout(parent);
+            QLabel *label = new QLabel("Вариант", this);
+            QLineEdit *edit = new QLineEdit("32", this);
+            edit->setFont(QFont("Times", 22));
+            btnSelectChoices = new QPushButton("Применить", this);
+            layout->addWidget(label);
+            layout->addWidget(edit);
+            layout->addWidget(btnSelectChoices);
+            leftLayout->addLayout(layout);
+        }
+        {
+            QLabel *l = new QLabel("Автомат Мили");
+            l->setAlignment(Qt::AlignHCenter);
+            leftLayout->addWidget(l);
+        }
+        table = new QTableWidget(2, 3);
+        QStringList hHeaderStr;
+        for (int i = 0; i < table->columnCount(); i++) {
+            hHeaderStr << tr("a%1").arg(QChar(0x2080 + i));
+            table->setColumnWidth(i, (table->frameWidth() - 9) / table->columnCount());
+        }
+        table->setHorizontalHeaderLabels(hHeaderStr);
+        QStringList vHeaderStr;
+        for (int i = 0; i < table->rowCount(); i++) {
+            vHeaderStr << tr("x%1").arg(QChar(0x2080 + i + 1));
+        }
+        table->setVerticalHeaderLabels(vHeaderStr);
+        table->setMinimumWidth(330);
+        for (int i = 0; i < table->rowCount(); i++) {
+            for (int j = 0; j < table->columnCount(); j++) {
+                QTableWidgetItem *pItem = new QTableWidgetItem(tr("a%1/y%2").arg(QChar(0x2080 + i + 1)).arg(QChar(0x2080 + i + 1)));
+                pItem->setFont(QFont("Times", 13));
+                table->setItem(i, j, pItem);
+            }
+        }
+        table->setEnabled(false);
+        leftLayout->addWidget(table);
+        QSpacerItem *space = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
+        leftLayout->addItem(space);
+        mainLayout->addLayout(leftLayout, 1);
     }
-    grafViewScene = new GraphWidget(this);
-    mainLayout->addWidget(grafViewScene);
+    {
+        QVBoxLayout *rightLayout = new QVBoxLayout(parent);
+        {
+            QHBoxLayout *layout = new QHBoxLayout(parent);
+            btnCreateNode = new QPushButton("Добавить вершину", this);
+            btnConnectNode = new QPushButton("Соединить", this);
+            btnConnectNode->setEnabled(false);
+            btnDelete = new QPushButton("Удалить", this);
+            btnDelete->setEnabled(false);
+            layout->addWidget(btnCreateNode);
+            layout->addWidget(btnConnectNode);
+            layout->addWidget(btnDelete);
+            rightLayout->addLayout(layout);
+        }
+        grafViewScene = new GraphWidget(this);
+        rightLayout->addWidget(grafViewScene);
+        mainLayout->addLayout(rightLayout, 2);
+    }
     connect(btnCreateNode, &QPushButton::clicked, grafViewScene, &GraphWidget::addNode);
     connect(btnConnectNode, &QPushButton::clicked, this, &Win::onBtnConnectNodeClicked);
     connect(btnDelete, &QPushButton::clicked, this, &Win::onBtnDeleteClicked);

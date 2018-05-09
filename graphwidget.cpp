@@ -1,4 +1,5 @@
 #include "graphwidget.h"
+#include "QDebug"
 
 GraphWidget::GraphWidget(QWidget *parent)
     : QGraphicsView(parent)
@@ -6,6 +7,7 @@ GraphWidget::GraphWidget(QWidget *parent)
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
     scene->setSceneRect(-200, -200, 500, 500);
+    setMinimumSize(500, 500);
     setScene(scene);
     setCacheMode(CacheBackground);
     setViewportUpdateMode(BoundingRectViewportUpdate);
@@ -84,6 +86,12 @@ void GraphWidget::scaleView(qreal scaleFactor)
         return;
 
     scale(scaleFactor, scaleFactor);
+}
+
+void GraphWidget::mouseMoveEvent(QMouseEvent *event)
+{
+//    qDebug() << event->pos().x() << " " << event->pos().y();
+    QGraphicsView::mouseMoveEvent(event);
 }
 
 void GraphWidget::shuffle()

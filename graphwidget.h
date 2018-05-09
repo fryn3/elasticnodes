@@ -34,7 +34,7 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 #endif
     void scaleView(qreal scaleFactor);
-
+    void mouseMoveEvent(QMouseEvent *event) override;
 private:
 };
 
