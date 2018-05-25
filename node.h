@@ -3,6 +3,7 @@
 
 #include <QGraphicsItem>
 #include <QList>
+#include <QString>
 
 class Edge;
 class GraphWidget;
@@ -14,18 +15,18 @@ class Node : public QGraphicsItem
 {
 public:
     static const QPen _pen;
-    Node(GraphWidget *graphWidget);
+    Node(GraphWidget *graphWidget, QString text = "");
     virtual ~Node();
     const uint id;
     void addEdge(Edge *edge);
     QList<Edge *> edges() const;
-
+    QString _text;  // который будет внутри вершины
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
     enum { Radius = 30 };
 
-    QRectF boundingRect() const override;
     QPainterPath shape() const override;
+    QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     static uint idStatic();
     void removeEdge(Edge *edge);
