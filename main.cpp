@@ -11,5 +11,6 @@ int main(int argc, char **argv)
     Win *widget = new Win;
 
     widget->show();
+    widget->setWindowTitle("GE");
     return app.exec();
 }
