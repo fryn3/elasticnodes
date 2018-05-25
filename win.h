@@ -44,6 +44,7 @@ public slots:
     void onBtnConnectNodeClicked();
     void onBtnDeleteClicked();
     void sceneSelectionChanged();
+    void sceneSave();
 };
 
 #endif // WIN_H

@@ -16,6 +16,9 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
                 layout->addWidget(btnCreateNode);
                 layout->addWidget(btnConnectNode);
                 layout->addWidget(btnDelete);
+                QPushButton * btn = new QPushButton("Save", this);
+                layout->addWidget(btn);
+                connect(btn, &QPushButton::clicked, this, &Win::sceneSave);
             }
             rightLayout->addLayout(layout);
             lNameGraf = new QLabel(this);
@@ -118,4 +121,10 @@ void Win::sceneSelectionChanged()
         btnConnectNode->setEnabled(false);
         btnDelete->setEnabled(false);
     }
+}
+
+void Win::sceneSave()
+{
+    QPixmap pixMap = QPixmap::grabWidget(grafViewScene);
+    pixMap.save("fileName.png");
 }
