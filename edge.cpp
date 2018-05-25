@@ -62,7 +62,7 @@ void Edge::adjust()
                 line2.setPoints(line11.p2(), line11.p1());
             }
             QLineF line3 = line2.normalVector();
-            line3.setLength(10);
+            line3.setLength(12);
             textPoint = line3.p2();
         } else {
             sourcePoint = destPoint = line.p1();
@@ -71,7 +71,7 @@ void Edge::adjust()
     } else {
         textPoint = QPointF(boundingRect().center().x() - Node::Radius / 2, boundingRect().center().y());
         prepareGeometryChange();
-        sourcePoint = mapFromItem(source, 0, Node::Radius);
+        sourcePoint = mapFromItem(source, 0, -Node::Radius);
         destPoint = mapFromItem(source, Node::Radius, 0);
     }
 }
@@ -91,9 +91,8 @@ QPainterPath Edge::shape() const{
         path.lineTo(line.p2() - offset1);
         path.lineTo(line.p2() + offset1);
     } else {
-        QRectF r= mapRectFromItem(source, source->boundingRect());
-        r.moveCenter(r.topRight());
-        path.addRect(r);
+        path.addEllipse(source->pos() + QPointF(Node::Radius, -Node::Radius),
+                        Node::Radius + 2, Node::Radius + 2);
     }
     return path;
 }
@@ -140,14 +139,18 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
                                                   cos(angle - M_PI + M_PI / 1.8) * qMin(arrowSize, line.length()));
         peak = line.p2();
     } else {
-        painter->drawArc(boundingRect().toRect(),  16 * -90, 16 * 270);
-        angle = 1.06*M_PI;
+        painter->drawArc(source->pos().x(),
+                         source->pos().y() - 2 * Node::Radius,
+                         2 * Node::Radius,
+                         2 * Node::Radius,
+                         16 * -70, 16 * 270);
+        angle = 1.07*M_PI;
         destArrowP1 = destPoint + QPointF(sin(angle - M_PI / 1.8) * arrowSize,
-                                                  cos(angle - M_PI / 1.8) * arrowSize);
+                                                 cos(angle - M_PI / 1.8) * arrowSize);
         destArrowP2 = destPoint + QPointF(sin(angle - M_PI + M_PI / 1.8)* arrowSize,
-                                                  cos(angle - M_PI + M_PI / 1.8) * arrowSize);
+                                                 cos(angle - M_PI + M_PI / 1.8) * arrowSize);
         painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
-        peak = QPointF(boundingRect().center().x(), boundingRect().bottom());
+        peak = destPoint;
 
     }
     painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
