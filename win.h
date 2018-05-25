@@ -16,7 +16,12 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include "graphwidget.h"
+#include <QApplication>
 
+enum TypeAutomat {
+    Mili,
+    Mura
+};
 
 class Win : public QWidget
 {
@@ -24,16 +29,18 @@ class Win : public QWidget
 public:
     explicit Win(QWidget *parent = nullptr);
     ~Win();
+    QVector<QVector<QString> > table;   // таблица графа
+    int typeAuto;   // TypeAutomat
 private:
-    QPushButton *btnSelectChoices;
-    QTableWidget *table;
     QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
+    QLabel *lNameGraf;
     GraphWidget *grafViewScene;
     Node *_source;  // сохраняет вершину при нажатии на кнопку "Соединить"
-    bool connFlag;
+    bool connFlag;  // флаг поднимается при нажатии на кнопку "Соединить"
 signals:
 
 public slots:
+    void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
     void onBtnDeleteClicked();
     void sceneSelectionChanged();

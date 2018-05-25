@@ -4,75 +4,70 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
 {
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     {
-        QVBoxLayout *leftLayout = new QVBoxLayout(parent);
-        {
-            QHBoxLayout *layout = new QHBoxLayout(parent);
-            QLabel *label = new QLabel("Вариант", this);
-            QLineEdit *edit = new QLineEdit("32", this);
-            edit->setFont(QFont("Times", 22));
-            btnSelectChoices = new QPushButton("Применить", this);
-            layout->addWidget(label);
-            layout->addWidget(edit);
-            layout->addWidget(btnSelectChoices);
-            leftLayout->addLayout(layout);
-        }
-        {
-            QLabel *l = new QLabel("Автомат Мили");
-            l->setAlignment(Qt::AlignHCenter);
-            leftLayout->addWidget(l);
-        }
-        table = new QTableWidget(2, 3);
-        QStringList hHeaderStr;
-        for (int i = 0; i < table->columnCount(); i++) {
-            hHeaderStr << tr("a%1").arg(QChar(0x2080 + i));
-            table->setColumnWidth(i, (table->frameWidth() - 9) / table->columnCount());
-        }
-        table->setHorizontalHeaderLabels(hHeaderStr);
-        QStringList vHeaderStr;
-        for (int i = 0; i < table->rowCount(); i++) {
-            vHeaderStr << tr("x%1").arg(QChar(0x2080 + i + 1));
-        }
-        table->setVerticalHeaderLabels(vHeaderStr);
-        table->setMinimumWidth(330);
-        for (int i = 0; i < table->rowCount(); i++) {
-            for (int j = 0; j < table->columnCount(); j++) {
-                QTableWidgetItem *pItem = new QTableWidgetItem(tr("a%1/y%2").arg(QChar(0x2080 + i + 1)).arg(QChar(0x2080 + i + 1)));
-                pItem->setFont(QFont("Times", 13));
-                table->setItem(i, j, pItem);
-            }
-        }
-        table->setEnabled(false);
-        leftLayout->addWidget(table);
-        QSpacerItem *space = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-        leftLayout->addItem(space);
-        mainLayout->addLayout(leftLayout, 1);
-    }
-    {
         QVBoxLayout *rightLayout = new QVBoxLayout(parent);
         {
             QHBoxLayout *layout = new QHBoxLayout(parent);
-            btnCreateNode = new QPushButton("Добавить вершину", this);
-            btnConnectNode = new QPushButton("Соединить", this);
-            btnConnectNode->setEnabled(false);
-            btnDelete = new QPushButton("Удалить", this);
-            btnDelete->setEnabled(false);
-            layout->addWidget(btnCreateNode);
-            layout->addWidget(btnConnectNode);
-            layout->addWidget(btnDelete);
+            {
+                btnCreateNode = new QPushButton("Добавить вершину", this);
+                btnConnectNode = new QPushButton("Соединить", this);
+                btnConnectNode->setEnabled(false);
+                btnDelete = new QPushButton("Удалить", this);
+                btnDelete->setEnabled(false);
+                layout->addWidget(btnCreateNode);
+                layout->addWidget(btnConnectNode);
+                layout->addWidget(btnDelete);
+            }
             rightLayout->addLayout(layout);
+            lNameGraf = new QLabel(this);
+            lNameGraf->setAlignment(Qt::AlignCenter);
+            rightLayout->addWidget(lNameGraf);
+            grafViewScene = new GraphWidget(this);
+            rightLayout->addWidget(grafViewScene);
         }
-        grafViewScene = new GraphWidget(this);
-        rightLayout->addWidget(grafViewScene);
         mainLayout->addLayout(rightLayout, 2);
     }
-    connect(btnCreateNode, &QPushButton::clicked, grafViewScene, &GraphWidget::addNode);
+    connect(btnCreateNode, &QPushButton::clicked, this, &Win::onBtnCreateNodeClicked);
     connect(btnConnectNode, &QPushButton::clicked, this, &Win::onBtnConnectNodeClicked);
     connect(btnDelete, &QPushButton::clicked, this, &Win::onBtnDeleteClicked);
     connect(grafViewScene->scene(), &QGraphicsScene::selectionChanged, this, &Win::sceneSelectionChanged);
+    if (QApplication::arguments().size() < 4) {
+        qDebug() << "Table did not get";
+    } else {
+        typeAuto =   QApplication::arguments()[1].toInt();    // Мили или Мура
+        int colums = QApplication::arguments()[2].toInt();    // и кол-во состояний
+        int rows =   QApplication::arguments()[3].toInt();
+        if (QApplication::arguments().size() != rows * colums + 4) {
+            qDebug() << "Format table error";
+        } else {
+            table.resize(rows);
+            for (int i = 0; i < rows; i++) {
+                table[i].resize(colums);
+                for(int j = 0; j < colums; j++) {
+                    table[i][j] = QApplication::arguments()[i * colums + j + 4];
+                }
+            }
+            lNameGraf->setText((typeAuto == TypeAutomat::Mili ? "Автомат Мили": "Автомат Мура"));
+        }
+    }
 }
 
 Win::~Win() { }
 
+void Win::onBtnCreateNodeClicked() {
+    static int x = 0, y = -100;
+    Node *node = new Node(grafViewScene);
+    switch ((Node::idStatic() - 1) % 3) {
+    case 0:
+        x -= 4 * Node::Radius + 20;
+        y += 2 * Node::Radius + 10;
+        break;
+    case 1:
+    case 2:
+        x += 2 * Node::Radius + 10;
+        break;
+    }
+    node->setPos(x, y);
+}
 
 void Win::onBtnConnectNodeClicked()
 {
