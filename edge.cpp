@@ -54,15 +54,15 @@ void Edge::adjust()
             // Нахождение точки для текста
             QLineF line1(sourcePoint, destPoint), line2;
             if (line1.angle() >= 0 && line1.angle() <= 180) {
-                line1.setLength(line1.length() - 30);
+                line1.setLength(line1.length() - 40);
                 line2.setPoints(line1.p2(), line1.p1());
             } else {
                 QLineF line11(destPoint, sourcePoint);
-                line11.setLength(30);
+                line11.setLength(40);
                 line2.setPoints(line11.p2(), line11.p1());
             }
             QLineF line3 = line2.normalVector();
-            line3.setLength(12);
+            line3.setLength(14);
             textPoint = line3.p2();
         } else {
             sourcePoint = destPoint = line.p1();
@@ -155,7 +155,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
     painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
     painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
-
+    painter->setFont(QFont("Times", 11));
     painter->drawText(textPoint, "x2 y2");
 
 //    painter->drawText(-Radius / 5, 0, QString("%1").arg(id));
