@@ -4,12 +4,14 @@ HEADERS += \
         edge.h \
         node.h \
         graphwidget.h \
-    win.h
+    win.h \
+    automata.h
 
 SOURCES += \
         edge.cpp \
         main.cpp \
         node.cpp \
         graphwidget.cpp \
-    win.cpp
+    win.cpp \
+    automata.cpp
 

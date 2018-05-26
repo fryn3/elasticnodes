@@ -1,6 +1,7 @@
 #ifndef WIN_H
 #define WIN_H
 
+#include <QApplication>
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -16,12 +17,8 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include "graphwidget.h"
-#include <QApplication>
+#include "automata.h"
 
-enum TypeAutomat {
-    Mili,
-    Mura
-};
 
 class Win : public QWidget
 {
@@ -29,14 +26,14 @@ class Win : public QWidget
 public:
     explicit Win(QWidget *parent = nullptr);
     ~Win();
-    QVector<QVector<QString> > table;   // таблица графа
-    int typeAuto;   // TypeAutomat
+    Automata::Abstract *automat;
 private:
     QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
-    QLabel *lNameGraf;
+    QLabel *lNameGraf,  // Для вывода имя графа: Мили или Мура
+            *lTip;      // Подсказки
     GraphWidget *grafViewScene;
-    Node *_source;  // сохраняет вершину при нажатии на кнопку "Соединить"
-    bool connFlag;  // флаг поднимается при нажатии на кнопку "Соединить"
+    Node *_source;  // Сохраняет вершину при нажатии на кнопку "Соединить"
+    bool connFlag;  // Флаг поднимается при нажатии на кнопку "Соединить"
 signals:
 
 public slots:

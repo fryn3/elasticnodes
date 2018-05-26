@@ -24,6 +24,8 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
             lNameGraf = new QLabel(this);
             lNameGraf->setAlignment(Qt::AlignCenter);
             rightLayout->addWidget(lNameGraf);
+            lTip = new QLabel(this);
+            rightLayout->addWidget(lTip);
             grafViewScene = new GraphWidget(this);
             rightLayout->addWidget(grafViewScene);
         }
@@ -33,24 +35,10 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
     connect(btnConnectNode, &QPushButton::clicked, this, &Win::onBtnConnectNodeClicked);
     connect(btnDelete, &QPushButton::clicked, this, &Win::onBtnDeleteClicked);
     connect(grafViewScene->scene(), &QGraphicsScene::selectionChanged, this, &Win::sceneSelectionChanged);
-    if (QApplication::arguments().size() < 4) {
-        qDebug() << "Table did not get";
-    } else {
-        typeAuto =   QApplication::arguments()[1].toInt();    // Мили или Мура
-        int colums = QApplication::arguments()[2].toInt();    // и кол-во состояний
-        int rows =   QApplication::arguments()[3].toInt();
-        if (QApplication::arguments().size() != rows * colums + 4) {
-            qDebug() << "Format table error";
-        } else {
-            table.resize(rows);
-            for (int i = 0; i < rows; i++) {
-                table[i].resize(colums);
-                for(int j = 0; j < colums; j++) {
-                    table[i][j] = QApplication::arguments()[i * colums + j + 4];
-                }
-            }
-            lNameGraf->setText((typeAuto == TypeAutomat::Mili ? "Автомат Мили": "Автомат Мура"));
-        }
+    automat = Automata::create(QApplication::arguments());
+    if (automat->type != Automata::Type::FAIL_TYPE) {
+        lNameGraf->setText((automat->type == Automata::Type::MILI ? "Автомат Мили": "Автомат Мура"));
+        lTip->setText(QString("Вых файл: %1.png").arg(automat->outFile));
     }
 }
 
@@ -126,5 +114,5 @@ void Win::sceneSelectionChanged()
 void Win::sceneSave()
 {
     QPixmap pixMap = QPixmap::grabWidget(grafViewScene);
-    pixMap.save("fileName.png");
+    pixMap.save(automat->outFile + ".png");
 }
