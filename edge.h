@@ -8,11 +8,12 @@ class Node;
 class Edge : public QGraphicsItem
 {
 public:
-    Edge(Node *sourceNode, Node *destNode);
+    Edge(Node *sourceNode, Node *destNode, QString textArrow = "");
     virtual ~Edge();
     const uint id;
     Node *sourceNode() const;
     Node *destNode() const;
+    QString textEdge;
 
     void adjust();
 

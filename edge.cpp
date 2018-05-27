@@ -8,8 +8,8 @@
 
 uint Edge::_idStatic = 0;
 
-Edge::Edge(Node *sourceNode, Node *destNode)
-    : id(_idStatic++), arrowSize(15)
+Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
+    : id(_idStatic++), arrowSize(15), textEdge(textArrow)
 {
     setFlag(QGraphicsItem::ItemIsSelectable);
     source = sourceNode;
@@ -156,7 +156,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
     painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
     painter->setFont(QFont("Times", 11));
-    painter->drawText(textPoint, "x2 y2");
+    painter->drawText(textPoint, textEdge);
 
 //    painter->drawText(-Radius / 5, 0, QString("%1").arg(id));
 //    painter->drawText(-Radius / 5, 0 + 10, QString("%1").arg(id));

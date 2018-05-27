@@ -21,9 +21,9 @@ Node::Node(GraphWidget *graphWidget, QString text)
     setZValue(10);
     graphWidget->scene()->addItem(this);    // сразу добавляет на сцену
     if (text.isEmpty()) {
-        _text = QString("%1").arg(id);
+        textInNode = QString("%1").arg(id);
     } else {
-        _text = text;
+        textInNode = text;
     }
 }
 
@@ -65,7 +65,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setPen(_pen);
     painter->drawEllipse(-Radius, -Radius, 2 * Radius, 2 * Radius);
     painter->setFont(QFont("Times", 12, QFont::Bold));
-    painter->drawText(boundingRect(), Qt::AlignCenter, _text);
+    painter->drawText(boundingRect(), Qt::AlignCenter, textInNode);
 }
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
