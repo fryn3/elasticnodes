@@ -32,7 +32,8 @@ Abstract::Abstract(QStringList data) : countX(0), countY(0)
         return;
     }
     outFile = data[NAME_FILE];
-    type = data[TYPE_AUTO].toInt();    // Мили или Мура
+    // Мили или Мура
+    type = data[TYPE_AUTO].toInt();
     countA = data[COLUMNS].toInt();
     int rows = data[ROWS].toInt();
     if (data.size() != rows * countA + COUNT_HEADER) {
@@ -58,6 +59,9 @@ Mili::Mili(QStringList data) : Abstract(data)
     }
 }
 
+QRegExp Mura::regExpNode = QRegExp("a[0-9]+/((y[1-9]+[0-9]*(,y[1-9]+[0-9]*)*)|(-))");
+QRegExp Mura::regExpEdge = QRegExp("x[1-9]+[0-9]*(,x[1-9]+[0-9]*)*");
+
 Mura::Mura(QStringList data) : Abstract(data)
 {
     if (type >= Type::FAIL_TYPE) {
@@ -70,20 +74,24 @@ Mura::Mura(QStringList data) : Abstract(data)
             checkTable[i].insert("y", 0);
         } else {
             QStringList yN = table[0][i].split(",");
-            for(int j = 0; j < yN.size(); yN++) {
+            for(int j = 0; j < yN.size(); j++) {
                 // "yN", где N это номер вых сигнала.
                 int N = yN[j].remove(0, 1).toInt();
                 if (countY < N) {
                     countY = N;
                 }
-                checkTable[i].insert("y", N);
+                // "y1, y2" -> [1, 2]
+                checkTable[i].insert("OutSignals", N);
             }
         }
-        for (int j = 0; j < countX; j++) {
-            if (table[j + 1][i] == "-") {
-                checkTable[i].insert("")
+        // Начиная со второй строки.
+        for (int j = 1; j < countX + 1; j++) {
+            if (table[j][i] == "-") {
+                checkTable[i].insert("OutState", 0);
             } else {
-
+                // "a3" -> 3
+                int outSt = table[j][i].mid(1).toInt();
+                checkTable[i].insert("OutState", outSt);
             }
         }
     }

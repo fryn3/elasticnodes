@@ -24,8 +24,8 @@ public:
     QString outFile;
     QVector<QVector<QString> > table;   // Таблица графа
     int countA;                         // Кол-во состояний
-    int countX;                         // Кол-во вых. сигн
-    int countY;                         // Кол-во вход. сигн
+    int countX;                         // Кол-во вых. сигн. В абстр классе == 0!
+    int countY;                         // Кол-во вход. сигн. В абстр классе == 0!
     int type;   // TypeAutomat
     // Проверяет корректность графа.
     // В классе Abstract всегда возвращает false
@@ -43,6 +43,9 @@ class Mura : public Abstract
 public:
     Mura(QStringList data);
     QVector<QMultiMap<QString, int> > checkTable;
+    // Проверяет корректность ввода с помощью QString::contains
+    static QRegExp regExpNode;
+    static QRegExp regExpEdge;
 };
 
 }
