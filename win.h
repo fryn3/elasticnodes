@@ -16,6 +16,7 @@
 #include <QSpacerItem>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QList>
 #include "graphwidget.h"
 #include "automata.h"
 
@@ -28,12 +29,21 @@ public:
     ~Win();
     Automata::Abstract *automat;
 private:
+    // GUI
     QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
     QLabel *lNameGraf,  // Для вывода имя графа: Мили или Мура
-            *lTip;      // Подсказки
+            *lTip;      // Подсказки для всего
     GraphWidget *grafViewScene;
+    QLabel *lTipInput;   // Подсказки ввода
+    QLineEdit *eInput;
+    QPushButton *btnApply;   // Применить ввод (с проверкой корректности).
+    QPushButton *btnCheck;   // Проверка всего графа с вариантом.
+    // var and func
     Node *_source;  // Сохраняет вершину при нажатии на кнопку "Соединить"
     bool connFlag;  // Флаг поднимается при нажатии на кнопку "Соединить"
+    QList <Node*> nodes;
+    QList <Edge*> edges;
+    void designItem(QGraphicsItem *it);
 signals:
 
 public slots:
