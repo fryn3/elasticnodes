@@ -27,6 +27,17 @@ Edge::~Edge()
         dest->removeEdge(this);
 }
 
+void Edge::setTextContent(QString text)
+{
+    textEdge = text;
+    update();
+}
+
+QString Edge::textContent() const
+{
+    return textEdge;
+}
+
 Node *Edge::sourceNode() const
 {
     return source;
@@ -82,7 +93,7 @@ QPainterPath Edge::shape() const{
     if (source != dest) {
         QLineF line = QLineF(sourcePoint.x(), sourcePoint.y(), destPoint.x(), destPoint.y());
         qreal radAngle = line.angle() * M_PI / 180;
-        qreal selectionOffset = 3;
+        qreal selectionOffset = 4;
         qreal dx = selectionOffset * sin(radAngle);
         qreal dy = selectionOffset * cos(radAngle);
         QPointF offset1 = QPointF(dx, dy);

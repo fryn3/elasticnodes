@@ -33,6 +33,17 @@ Node::~Node()
         delete edge;
 }
 
+void Node::setTextContent(QString text)
+{
+    textInNode = text;
+    update();
+}
+
+QString Node::textContent() const
+{
+    return textInNode;
+}
+
 void Node::addEdge(Edge *edge)
 {
     edgeList << edge;

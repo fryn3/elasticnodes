@@ -2,25 +2,27 @@
 #define EDGE_H
 
 #include <QGraphicsItem>
-
+#include "nodeedgeparent.h"
 class Node;
 
-class Edge : public QGraphicsItem
+class Edge : public NodeEdgeParent
 {
 public:
     Edge(Node *sourceNode, Node *destNode, QString textArrow = "");
     virtual ~Edge();
+    void setTextContent(QString text) override;
+    QString textContent() const override;
     const uint id;
     Node *sourceNode() const;
     Node *destNode() const;
-    QString textEdge;
 
     void adjust();
 
-    enum { Type = UserType + 2 };
+    enum { Type = NodeEdgeParent::Type + 2 };
     int type() const override { return Type; }
 
 protected:
+    QString textEdge;
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
