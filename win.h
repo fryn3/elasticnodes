@@ -17,6 +17,7 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QList>
+#include <QMessageBox>
 #include "graphwidget.h"
 #include "automata.h"
 
@@ -50,6 +51,9 @@ public slots:
     void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
     void onBtnDeleteClicked();
+    void eInputTextChange();
+    void onBtnApplyClicked();
+    void onBtnCheckClicked();
     void sceneSelectionChanged();
     void sceneSave();
 };

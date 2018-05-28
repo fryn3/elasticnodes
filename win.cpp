@@ -31,24 +31,27 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
             lTipInput = new QLabel("Подсказки тут",this);
             layout->addWidget(lTipInput, 0, 0, 1, 2);
             eInput = new QLineEdit(this);
+            eInput->setEnabled(false);
             layout->addWidget(eInput, 1, 0);
             btnApply = new QPushButton("Применить", this);
+            btnApply->setEnabled(false);
             layout->addWidget(btnApply, 1, 1);
             btnCheck = new QPushButton("Проверить!", this);
             btnCheck->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
             layout->addWidget(btnCheck, 0, 2, 2, 1);
             mainLayout->addLayout(layout);
         }
-
-
     }
     connect(btnCreateNode, &QPushButton::clicked, this, &Win::onBtnCreateNodeClicked);
     connect(btnConnectNode, &QPushButton::clicked, this, &Win::onBtnConnectNodeClicked);
     connect(btnDelete, &QPushButton::clicked, this, &Win::onBtnDeleteClicked);
     connect(grafViewScene->scene(), &QGraphicsScene::selectionChanged, this, &Win::sceneSelectionChanged);
+    connect(eInput, &QLineEdit::textChanged, this, &Win::eInputTextChange);
+    connect(btnApply, &QPushButton::clicked, this, &Win::onBtnApplyClicked);
+    connect(btnCheck, &QPushButton::clicked, this, &Win::onBtnCheckClicked);
     automat = Automata::create(QApplication::arguments());
-    if (automat->type != Automata::Type::FAIL_TYPE) {
-        lNameGraf->setText((automat->type == Automata::Type::MILI ? "Автомат Мили": "Автомат Мура"));
+    if (automat->type() != Automata::Abstract::Type) {
+        lNameGraf->setText((automat->type() == Automata::Mili::Type? "Автомат Мили": "Автомат Мура"));
         lTip->setText(QString("Вых файл: %1.png").arg(automat->outFile));
     }
 }
@@ -57,23 +60,23 @@ Win::~Win() { }
 
 void Win::designItem(QGraphicsItem *it)
 {
-    if (it->type() == QGraphicsItem::UserType + 1) { // Node
-        Node *n = qgraphicsitem_cast<Node *>(it);
-        eInput->setText(n->textInNode);
-        if (automat->type == Automata::Type::MURA) {
-            Automata::Mura *mur = dynamic_cast<Automata::Mura*>(automat);
-            lTipInput->setText(
-                tr("Шаблон ввода: aK/yL[,yM] или aK/-, где K от 0 до %1, L и M от 1 до %2")
-                        .arg(mur->countA - 1).arg(mur->countY));
-        }
-    } else if (it->type() == QGraphicsItem::UserType + 2) { // Edge
-        Edge *e = qgraphicsitem_cast<Edge *>(it);
-        eInput->setText(e->textEdge);
-        if (automat->type == Automata::Type::MURA) {
-            Automata::Mura *mur = dynamic_cast<Automata::Mura*>(automat);
-            lTipInput->setText(
-                tr("Шаблон ввода: xK[,xM] или aK/-, где K и M от 1 до %1")
-                        .arg(mur->countX));
+    if (!it) {  // nullptr
+        // Ничего не выделено
+        lTipInput->clear();
+        eInput->clear();
+        eInput->setEnabled(false);
+    } else {
+        eInput->setEnabled(true);
+        if (it->type() == Node::Type) {
+            Node *n = qgraphicsitem_cast<Node *>(it);
+            eInput->setText(n->textContent());
+            eInput->setValidator(new QRegExpValidator(automat->regExpNode()));
+            lTipInput->setText(automat->tipNode());
+        } else if (it->type() == Edge::Type) {
+            Edge *e = qgraphicsitem_cast<Edge *>(it);
+            eInput->setText(e->textContent());
+            eInput->setValidator(new QRegExpValidator(automat->regExpEdge()));
+            lTipInput->setText(automat->tipEdge());
         }
     }
 }
@@ -85,7 +88,7 @@ void Win::onBtnCreateNodeClicked() {
     for (int i = 0; i < automat->countA; i++) {
         flFinding = false;
         for (int j = 0; j < nodes.size(); j++) {
-            QString s = nodes[j]->textInNode.section(QRegExp("[^0-9]+"), 0, 0, QString::SectionSkipEmpty);
+            QString s = nodes[j]->textContent().section(QRegExp("[^0-9]+"), 0, 0, QString::SectionSkipEmpty);
             if (s.toInt() == i) {
                 flFinding = true;
                 break;
@@ -96,7 +99,8 @@ void Win::onBtnCreateNodeClicked() {
             break;
         }
     }
-    Node *node = new Node(grafViewScene, QString("a%1/y1").arg(numNode));
+    QString nodeText = (automat->type() == Automata::Mura::Type ? "a%1/y1" : "a%1");
+    Node *node = new Node(grafViewScene, QString(nodeText).arg(numNode));
     x = - 2 * (2 * Node::Radius + 10) + ((!flFinding ? numNode : nodes.size()) % 3) * (2 * Node::Radius + 10);
     y = -100 + 2 * Node::Radius + 10 + ((!flFinding ? numNode : nodes.size()) / 3) * (2 * Node::Radius + 10);
     nodes.append(node);
@@ -112,7 +116,6 @@ void Win::onBtnConnectNodeClicked()
     } else {
         connFlag = false;
     }
-
 }
 
 void Win::onBtnDeleteClicked()
@@ -120,14 +123,14 @@ void Win::onBtnDeleteClicked()
     _source = nullptr;
     connFlag = false;
     auto i = grafViewScene->scene()->selectedItems().at(0);
-    if (i->type() == QGraphicsItem::UserType + 1) {         // Node
+    if (i->type() == Node::Type) {
         Node* n = qgraphicsitem_cast<Node*>(i);
         if (n) {
             nodes.removeAll(n);
         } else {
             qDebug() << "qgraphicsitem_cast returned 0";
         }
-    } else if (i->type() == QGraphicsItem::UserType + 2) {  // Edge
+    } else if (i->type() == Edge::Type) {
         Edge *e = qgraphicsitem_cast<Edge*>(i);
         if (e) {
             edges.removeAll(e);
@@ -141,6 +144,180 @@ void Win::onBtnDeleteClicked()
     delete i;
 }
 
+void Win::eInputTextChange()
+{
+    if(eInput->hasAcceptableInput())
+        btnApply->setEnabled(true);
+    else
+        btnApply->setEnabled(false);
+}
+
+void Win::onBtnApplyClicked()
+{
+    if (grafViewScene->scene()->selectedItems().size() != 1) {
+        qDebug() << "grafViewScene->scene()->selectedItems().size() == "
+               << grafViewScene->scene()->selectedItems().size();
+        return;
+    }
+    auto it = grafViewScene->scene()->selectedItems().at(0);
+    NodeEdgeParent *nodeEdge = dynamic_cast<NodeEdgeParent*>(it);
+    if (nodeEdge) {
+        nodeEdge->setTextContent(eInput->text());
+    } else { // if (it->type() == Edge::Type) {
+        qDebug() << "It does not NodeEdgeParent";
+    }
+}
+
+void Win::onBtnCheckClicked()
+{
+    QMessageBox msgBox;
+    if (nodes.size() != automat->countA) {
+        msgBox.setText("Error.");
+        msgBox.exec();
+        return;
+    }
+    int flFail = 0;
+    QVector<QMultiMap<QString, int> > ch;
+    if (automat->type() == Automata::Mura::Type) {
+        ch.resize(nodes.size());
+        // Проверка на очередность вершин
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                if (nodes.at(i)->textContent()
+                        .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
+                        .at(0).toInt() == i) {
+                    break;
+                } else if (j == nodes.size() - 1) {
+                    flFail = 1;
+                }
+            }
+        }
+        for (int i = 0; i < nodes.size(); i++) {
+            // "a2/y1,y3" or "a1/-"
+            QStringList nums = nodes.at(i)->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
+            if (nums.size() == 1) { // "a1/-"
+                if (nums.at(0).toInt() >= automat->countA) {
+                    flFail = 2;
+                    break;
+                }
+                ch[(nums.at(0).toInt())].insert("y", 0);
+                continue;
+            }
+            for (int j = 1; j < nums.size(); j++) {
+                ch[(nums.at(0).toInt())].insert("y", nums.at(j).toInt());
+            }
+        }
+
+        for (int i = 0; i < edges.size(); i++) {
+            if (flFail) {
+                break;
+            }
+            int sourceNum = edges.at(i)->sourceNode()->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
+            int destNum = edges.at(i)->destNode()->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
+            // "x1" or "x2,x4"
+            QStringList nums = edges.at(i)->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
+            for (int j = 0; j < nums.size(); j++) {
+                ch[(sourceNum)].insert(tr("x%1").arg(nums.at(j)), destNum);
+            }
+        }
+        // Заполнение пропусков
+        for(int i = 0; i < ch.size(); i++) {
+            for (int j = 1; j < automat->countX + 1; j++) {
+                bool flMissKey = true;
+                for (auto key : ch[i].uniqueKeys()) {
+                    if (tr("x%1").arg(j) == key) {
+                        flMissKey = false;
+                        break;
+                    }
+                }
+                if (flMissKey) {
+                    ch[i].insert(tr("x%1").arg(j), 0);
+                }
+            }
+        }
+    } else if (automat->type() == Automata::Mili::Type) {
+        ch.resize(nodes.size());
+        // Проверка на очередность вершин
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                if (nodes.at(i)->textContent()
+                        .remove(0, 1).toInt() == i) {
+                    break;
+                } else if (j == nodes.size() - 1) {
+                    flFail = 1;
+                }
+            }
+        }
+
+        for (int i = 0; i < edges.size(); i++) {
+            if (flFail) {
+                break;
+            }
+            int sourceNum = edges.at(i)->sourceNode()->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
+            int destNum = edges.at(i)->destNode()->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
+            // "x1/y1,y2" or "x2/-"
+            QStringList nums = edges.at(i)->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
+            if (nums.at(0).toInt() > automat->countX) {
+                flFail = 2;
+                break;
+            }
+            ch[sourceNum].insert(tr("x%1a").arg(nums.at(0)), destNum);
+            if (nums.size() == 1) {
+                ch[sourceNum].insert(tr("x%1y").arg(nums.at(0)), 0);
+            } else {
+                for (int j = 1; j < nums.size(); j++) {
+                    if (nums.at(j).toInt() > automat->countY) {
+                        flFail = 3;
+                        break;
+                    }
+                    ch[sourceNum].insert(tr("x%1y").arg(nums.at(0)), nums.at(j).toInt());
+                }
+            }
+        }
+        // Заполнение пустот
+        for (int i = 0; i < automat->countA; i++) {
+            for (int j = 1; j < automat->countX; j++) {
+                bool flMissKey = true;
+                for(auto key : ch[i].uniqueKeys()) {
+                    if (tr("x%1a").arg(j) == key) {
+                        flMissKey = false;
+                        break;
+                    }
+                }
+                if (flMissKey) {
+                    ch[i].insert(tr("x%1a").arg(j), 0);
+                }
+                flMissKey = true;
+                for(auto key : ch[i].uniqueKeys()) {
+                    if (tr("x%1y").arg(j) == key) {
+                        flMissKey = false;
+                        break;
+                    }
+                }
+                if (flMissKey) {
+                    ch[i].insert(tr("x%1y").arg(j), 0);
+                }
+            }
+        }
+    }
+    if (!flFail && automat->check(ch)) {
+        QPixmap pixMap = QPixmap::grabWidget(grafViewScene);
+        pixMap.save(automat->outFile + ".png");
+        msgBox.setText("Success! Result saved!");
+        msgBox.exec();
+    } else {
+        msgBox.setText(tr("Error!\nFail #%1").arg(flFail));
+        msgBox.exec();
+    }
+}
+
 void Win::sceneSelectionChanged()
 {
     QList<QGraphicsItem *> l = grafViewScene->scene()->selectedItems();
@@ -150,7 +327,7 @@ void Win::sceneSelectionChanged()
             // Выделена вершина!
             if (connFlag) {
                 // Нужно соединить с новой вершиной
-                Edge *e = new Edge(_source, dest, "x1");
+                Edge *e = new Edge(_source, dest, (automat->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
                 edges.append(e);
                 grafViewScene->scene()->addItem(e);
                 connFlag = false;
@@ -172,6 +349,7 @@ void Win::sceneSelectionChanged()
         qDebug() << "grafViewScene->scene()->selectedItems().size() == " << l.size();
     } else {
         // Пропало выделение (после удаления или нажатия на "Соединить")
+        designItem(nullptr);
         if (connFlag)
             btnCreateNode->setEnabled(false);
         else

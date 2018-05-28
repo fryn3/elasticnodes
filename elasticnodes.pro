@@ -5,7 +5,8 @@ HEADERS += \
         node.h \
         graphwidget.h \
     win.h \
-    automata.h
+    automata.h \
+    nodeedgeparent.h
 
 SOURCES += \
         edge.cpp \
