@@ -5,8 +5,11 @@
 #include <QPainter>
 #include <QStyleOption>
 #include <QDebug>
+//#include <cmath>
 
+const qreal PI = atan(1) * 4;
 uint Edge::_idStatic = 0;
+int Edge::_offsAngle = 5;
 
 Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     : id(_idStatic++), arrowSize(15), textEdge(textArrow)
@@ -30,7 +33,7 @@ Edge::~Edge()
 void Edge::setTextContent(QString text)
 {
     textEdge = text;
-    update();
+    adjust();
 }
 
 QString Edge::textContent() const
@@ -54,32 +57,82 @@ void Edge::adjust()
         return;
 
     if(source != dest) {
+        bool offs = false;  // смещение с центра
         QLineF line(mapFromItem(source, 0, 0), mapFromItem(dest, 0, 0));
         qreal length = line.length();
-
-        prepareGeometryChange();
-        if (length > qreal(2 * Node::Radius)) {
-            QPointF edgeOffset((line.dx() * Node::Radius) / length, (line.dy() * Node::Radius) / length);
-            sourcePoint = line.p1() + edgeOffset;
-            destPoint = line.p2() - edgeOffset;
-            // Нахождение точки для текста
-            QLineF line1(sourcePoint, destPoint), line2;
-            if (line1.angle() >= 0 && line1.angle() <= 180) {
-                line1.setLength(line1.length() - 40);
-                line2.setPoints(line1.p2(), line1.p1());
-            } else {
-                QLineF line11(destPoint, sourcePoint);
-                line11.setLength(40);
-                line2.setPoints(line11.p2(), line11.p1());
+        qreal angl = line.angle();
+        qreal anglRad = angl * PI / 180;
+        for (auto edg : source->edges()) {
+            if (edg->sourceNode() == dest) {
+                offs = true;
+                if(id > edg->id) {
+                    edg->adjust();
+                }
+                break;
             }
+        }
+        prepareGeometryChange();
+        if (!offs) {
+            if (length > qreal(2 * Node::Radius)) {
+                QPointF edgeOffset((line.dx() * Node::Radius) / length, (line.dy() * Node::Radius) / length);
+                sourcePoint = line.p1() + edgeOffset;
+                destPoint = line.p2() - edgeOffset;
+            } else {
+                sourcePoint = destPoint = line.p1();
+            }
+        } else {    // offs
+            if (length > qreal(2 * Node::Radius)) {
+                sourcePoint.setX(line.p1().x() + Node::Radius * cos((angl + _offsAngle) * PI / 180));
+                sourcePoint.setY(line.p1().y() - Node::Radius * sin((angl + _offsAngle) * PI / 180));
+                destPoint.setX(line.p2().x() + Node::Radius * cos((angl - 180 - _offsAngle) * PI / 180));
+                destPoint.setY(line.p2().y() - Node::Radius * sin((angl - 180 - _offsAngle) * PI / 180));
+            } else {
+                sourcePoint = destPoint = line.p1();
+            }
+        }
+        // Нахождение точки для текста
+        // for QFont("Times", 11)
+        QLineF line1(sourcePoint, destPoint), line2;
+        qreal widthText, hightText;
+        widthText = 8 * textEdge.size();
+        hightText = 14;
+        if (line1.angle() > 0 && line1.angle() <= 90) {
+            // вдоль / поперек
+            // widthText / hightText + 10   <= при 0
+            // hightText / 10                <= при 90
+            line1.setLength(line1.length() - (widthText * cos(anglRad) + hightText * sin(anglRad)));
+            line2.setPoints(line1.p2(), line1.p1());
             QLineF line3 = line2.normalVector();
-            line3.setLength(14);
+            line3.setLength(10 * sin(anglRad) + (hightText + 10) * cos(anglRad));
+            textPoint = line3.p2();
+        } else if (line1.angle() > 90 && line1.angle() <= 180) {
+            // hightText / 10
+            // 5 / 10
+            line1.setLength(line1.length() - (5 * -cos(anglRad) + hightText * sin(anglRad)));
+            line2.setPoints(line1.p2(), line1.p1());
+            QLineF line3 = line2.normalVector();
+            line3.setLength(10 * -cos(anglRad) + 10 * sin(anglRad));
+            textPoint = line3.p2();
+        } else if (line1.angle() > 180 && line1.angle() <= 270) {
+            // 5 / hightText
+            // 5 / 5
+            QLineF line11(destPoint, sourcePoint);
+            line11.setLength(5);
+            line2.setPoints(line11.p2(), line11.p1());
+            QLineF line3 = line2.normalVector();
+            line3.setLength(hightText * -cos(anglRad) + 5 * -sin(anglRad));
             textPoint = line3.p2();
         } else {
-            sourcePoint = destPoint = line.p1();
+            // 5 / 5
+            // widthText / 5
+            QLineF line11(destPoint, sourcePoint);
+            line11.setLength(5 * -sin(anglRad) + widthText * cos(anglRad));
+            line2.setPoints(line11.p2(), line11.p1());
+            QLineF line3 = line2.normalVector();
+            line3.setLength(5.0);
+            textPoint = line3.p2();
         }
-
-    } else {
+    } else {        // source == dest
         textPoint = QPointF(boundingRect().center().x() - Node::Radius / 2, boundingRect().center().y());
         prepareGeometryChange();
         sourcePoint = mapFromItem(source, 0, -Node::Radius);
@@ -118,10 +171,10 @@ QRectF Edge::boundingRect() const
         qreal x = textPoint.x();
         qreal y = textPoint.y();
         pText << QPointF(x, y)
-              << QPointF(x, y - 110)
-              << QPointF(x + 70, y - 110)
-              << QPointF(x + 70, y + 10)
-              << QPointF(x, y + 10);
+              << QPointF(x, y - 18) // for QFont("Times", 11)
+              << QPointF(x + 8 * textEdge.size(), y - 18)
+              << QPointF(x + 8 * textEdge.size(), y + 2)
+              << QPointF(x, y + 2);
         return shape().boundingRect().united(pText.boundingRect());
     }
     return shape().boundingRect();
@@ -168,7 +221,4 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
     painter->setFont(QFont("Times", 11));
     painter->drawText(textPoint, textEdge);
-
-//    painter->drawText(-Radius / 5, 0, QString("%1").arg(id));
-//    painter->drawText(-Radius / 5, 0 + 10, QString("%1").arg(id));
 }

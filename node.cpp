@@ -47,7 +47,6 @@ QString Node::textContent() const
 void Node::addEdge(Edge *edge)
 {
     edgeList << edge;
-    edge->adjust();
 }
 
 QList<Edge *> Node::edges() const

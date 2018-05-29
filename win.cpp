@@ -327,9 +327,20 @@ void Win::sceneSelectionChanged()
             // Выделена вершина!
             if (connFlag) {
                 // Нужно соединить с новой вершиной
-                Edge *e = new Edge(_source, dest, (automat->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
-                edges.append(e);
-                grafViewScene->scene()->addItem(e);
+                // Проверка на повторное соединение
+                bool miss = false;
+                for (auto edg : _source->edges()) {
+                    if (edg->sourceNode() == _source && edg->destNode() == dest) {
+                        miss = true;
+                        qDebug() << "Попытка повторного соединения";
+                        break;
+                    }
+                }
+                if (!miss) {
+                    Edge *e = new Edge(_source, dest, (automat->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                    edges.append(e);
+                    grafViewScene->scene()->addItem(e);
+                }
                 connFlag = false;
                 _source = nullptr;
                 btnCreateNode->setEnabled(true);
@@ -340,6 +351,7 @@ void Win::sceneSelectionChanged()
             // Выделена стрелка
             connFlag = false;
             _source = nullptr;
+            btnCreateNode->setEnabled(true);
             btnConnectNode->setEnabled(false);
             btnDelete->setEnabled(true);
         }
