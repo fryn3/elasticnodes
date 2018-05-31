@@ -4,25 +4,29 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
 {
     {
         QVBoxLayout *mainLayout = new QVBoxLayout(this);
+        lNameGraf = new QLabel(this);
+        lNameGraf->setAlignment(Qt::AlignCenter);
+        lNameGraf->setFont(QFont("Times", 20, QFont::Bold));
+        mainLayout->addWidget(lNameGraf);
         {
             QHBoxLayout *layout = new QHBoxLayout(parent);
-            btnCreateNode = new QPushButton("Добавить вершину", this);
-            btnConnectNode = new QPushButton("Соединить", this);
-            btnConnectNode->setEnabled(false);
+            btnCreateNode = new QPushButton("◯", this);
+            btnCreateNode->setFont(QFont("Times", 30, QFont::Bold));
+            btnCreateNode->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
+            btnConnectNode = new QPushButton("⤺", this);
+            btnConnectNode->setFont(QFont("Times", 30, QFont::Bold));
+            btnConnectNode->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
             btnDelete = new QPushButton("Удалить", this);
+            btnDelete->setFont(QFont("Times", 20, QFont::Bold));
+            btnDelete->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
             btnDelete->setEnabled(false);
             layout->addWidget(btnCreateNode);
             layout->addWidget(btnConnectNode);
             layout->addWidget(btnDelete);
-            QPushButton * btn = new QPushButton("Save", this);
-            layout->addWidget(btn);
-            connect(btn, &QPushButton::clicked, this, &Win::sceneSave);
             mainLayout->addLayout(layout);
         }
-        lNameGraf = new QLabel(this);
-        lNameGraf->setAlignment(Qt::AlignCenter);
-        mainLayout->addWidget(lNameGraf);
         lTip = new QLabel(this);
+        lTip->setFont(QFont("Times", 15));
         mainLayout->addWidget(lTip);
         grafViewScene = new GraphWidget(this);
         mainLayout->addWidget(grafViewScene);
@@ -101,27 +105,48 @@ void Win::onBtnCreateNodeClicked() {
     }
     QString nodeText = (automat->type() == Automata::Mura::Type ? "a%1/y1" : "a%1");
     Node *node = new Node(grafViewScene, QString(nodeText).arg(numNode));
-    x = - 2 * (2 * Node::Radius + 10) + ((!flFinding ? numNode : nodes.size()) % 3) * (2 * Node::Radius + 10);
-    y = -100 + 2 * Node::Radius + 10 + ((!flFinding ? numNode : nodes.size()) / 3) * (2 * Node::Radius + 10);
+    // Определяет сколько вершин будут появлятся на одной оси У
+    int nodeInRow = 6;
+    x = - 2 * (2 * Node::Radius + 10) +
+            ((!flFinding ? numNode : nodes.size()) % nodeInRow)
+            * (2 * Node::Radius + 10);
+    y = -100 + 2 * Node::Radius + 10 +
+            ((!flFinding ? numNode : nodes.size()) / nodeInRow)
+            * (2 * Node::Radius + 10);
     nodes.append(node);
     node->setPos(x, y);
+    _source = nullptr;
+    connFlag = 0;
+    lTip->setText("Вершина добавлена");
 }
 
 void Win::onBtnConnectNodeClicked()
 {
-    _source = qgraphicsitem_cast<Node *> (grafViewScene->scene()->selectedItems().at(0));
-    if (_source) {
-        connFlag = true;
-        grafViewScene->scene()->clearSelection();
-    } else {
-        connFlag = false;
+    if (grafViewScene->scene()->selectedItems().size() > 0) {
+        _source = qgraphicsitem_cast<Node *> (grafViewScene->scene()->selectedItems().at(0));
+        if (_source) {
+            lTip->setText("Выберите вершину куда будет проведена дуга");
+            connFlag = 2;
+            grafViewScene->scene()->clearSelection();
+        } else {
+            lTip->clear();
+            connFlag = 0;
+        }
+    }
+    if (!_source) {
+        if (connFlag == 0) {    // это условие не обязательное
+            lTip->setText("Выберите вершину источник, потом получатель дуги");
+            connFlag = 1;
+            grafViewScene->scene()->clearSelection();
+        }
+
     }
 }
 
 void Win::onBtnDeleteClicked()
 {
     _source = nullptr;
-    connFlag = false;
+    connFlag = 0;
     auto i = grafViewScene->scene()->selectedItems().at(0);
     if (i->type() == Node::Type) {
         Node* n = qgraphicsitem_cast<Node*>(i);
@@ -130,6 +155,7 @@ void Win::onBtnDeleteClicked()
         } else {
             qDebug() << "qgraphicsitem_cast returned 0";
         }
+        lTip->setText("Вершина удалена");
     } else if (i->type() == Edge::Type) {
         Edge *e = qgraphicsitem_cast<Edge*>(i);
         if (e) {
@@ -137,6 +163,7 @@ void Win::onBtnDeleteClicked()
         } else {
             qDebug() << "qgraphicsitem_cast returned 0";
         }
+        lTip->setText("Дуга удалена");
     } else {
         qDebug() << tr("I don't know what it is. type == %1").arg(i->type());
     }
@@ -322,39 +349,41 @@ void Win::sceneSelectionChanged()
 {
     QList<QGraphicsItem *> l = grafViewScene->scene()->selectedItems();
     if (l.size() == 1) {
-        Node *dest = qgraphicsitem_cast<Node *>(l.at(0));
-        if (dest) {
+        lTip->setText("Выделена вершина. ");
+        Node *node = qgraphicsitem_cast<Node *>(l.at(0));
+        if (node) {
             // Выделена вершина!
-            if (connFlag) {
+            if (connFlag == 1) {
+                // Назначен "Источник"
+                _source = node;
+                connFlag = 2;
+                lTip->setText("Выберите вершину куда будет проведена дуга");
+            } else if (connFlag == 2) {
                 // Нужно соединить с новой вершиной
                 // Проверка на повторное соединение
                 bool miss = false;
                 for (auto edg : _source->edges()) {
-                    if (edg->sourceNode() == _source && edg->destNode() == dest) {
+                    if (edg->sourceNode() == _source && edg->destNode() == node) {
                         miss = true;
-                        qDebug() << "Попытка повторного соединения";
+                        lTip->setText("Попытка повторного соединения");
                         break;
                     }
                 }
                 if (!miss) {
-                    Edge *e = new Edge(_source, dest, (automat->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                    Edge *e = new Edge(_source, node, (automat->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
                     edges.append(e);
                     grafViewScene->scene()->addItem(e);
                 }
-                connFlag = false;
+                connFlag = 0;
                 _source = nullptr;
-                btnCreateNode->setEnabled(true);
             }
-            btnConnectNode->setEnabled(true);
-            btnDelete->setEnabled(true);
         } else {
             // Выделена стрелка
+            lTip->setText("Выделена дуга.");
             connFlag = false;
             _source = nullptr;
-            btnCreateNode->setEnabled(true);
-            btnConnectNode->setEnabled(false);
-            btnDelete->setEnabled(true);
         }
+        btnDelete->setEnabled(true);
         designItem(l.at(0));
     } else if (l.size() > 1) {
         // Всегда должено быть выделено не более 1ого элемента
@@ -362,11 +391,6 @@ void Win::sceneSelectionChanged()
     } else {
         // Пропало выделение (после удаления или нажатия на "Соединить")
         designItem(nullptr);
-        if (connFlag)
-            btnCreateNode->setEnabled(false);
-        else
-            btnCreateNode->setEnabled(true);
-        btnConnectNode->setEnabled(false);
         btnDelete->setEnabled(false);
     }
 }

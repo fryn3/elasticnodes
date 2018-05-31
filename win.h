@@ -41,7 +41,10 @@ private:
     QPushButton *btnCheck;   // Проверка всего графа с вариантом.
     // var and func
     Node *_source;  // Сохраняет вершину при нажатии на кнопку "Соединить"
-    bool connFlag;  // Флаг поднимается при нажатии на кнопку "Соединить"
+    // Флаг поднимается при нажатии на кнопку "Соединить"
+    // connFlag == 1 Надо отметить "Источник" потом "Получатель"
+    // connFlag == 2 Надо отметить только "Получатель"
+    int connFlag;
     QList <Node*> nodes;
     QList <Edge*> edges;
     void designItem(QGraphicsItem *it);
