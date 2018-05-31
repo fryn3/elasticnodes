@@ -36,10 +36,9 @@ void GraphWidget::addNode()
 void GraphWidget::keyPressEvent(QKeyEvent *event)
 {
     Node *selectedNode = nullptr;
-    try {
+    if (scene()->selectedItems.size() == 1) {
         selectedNode = qgraphicsitem_cast<Node *> (scene()->selectedItems().at(0));
-    } catch (...) { selectedNode = nullptr; }
-
+    }
     switch (event->key()) {
     case Qt::Key_Up:
         if (selectedNode)
