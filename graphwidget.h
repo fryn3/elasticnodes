@@ -34,8 +34,9 @@ protected:
     void wheelEvent(QWheelEvent *event) override;
 #endif
     void scaleView(qreal scaleFactor);
-    void mouseMoveEvent(QMouseEvent *event) override;
-private:
+
+signals:
+    void editItem();
 };
 
 #endif // GRAPHWIDGET_H

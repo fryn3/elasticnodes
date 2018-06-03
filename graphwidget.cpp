@@ -1,5 +1,5 @@
 #include "graphwidget.h"
-#include "QDebug"
+#include <QDebug>
 
 GraphWidget::GraphWidget(QWidget *parent)
     : QGraphicsView(parent)
@@ -36,7 +36,7 @@ void GraphWidget::addNode()
 void GraphWidget::keyPressEvent(QKeyEvent *event)
 {
     Node *selectedNode = nullptr;
-    if (scene()->selectedItems.size() == 1) {
+    if (scene()->selectedItems().size() == 1) {
         selectedNode = qgraphicsitem_cast<Node *> (scene()->selectedItems().at(0));
     }
     switch (event->key()) {
@@ -67,6 +67,7 @@ void GraphWidget::keyPressEvent(QKeyEvent *event)
         shuffle();
         break;
     default:
+        qDebug() << event->key();
         QGraphicsView::keyPressEvent(event);
     }
 }
@@ -85,12 +86,6 @@ void GraphWidget::scaleView(qreal scaleFactor)
         return;
 
     scale(scaleFactor, scaleFactor);
-}
-
-void GraphWidget::mouseMoveEvent(QMouseEvent *event)
-{
-//    qDebug() << event->pos().x() << " " << event->pos().y();
-    QGraphicsView::mouseMoveEvent(event);
 }
 
 void GraphWidget::shuffle()
