@@ -63,7 +63,7 @@ QString Abstract::tipNode() const { return ""; }
 
 QString Abstract::tipEdge() const { return ""; }
 
-const QRegExp Mili::forNode = QRegExp("a[0-9]+");
+const QRegExp Mili::forNode = QRegExp("a(0|[1-9][0-9]*)");
 const QRegExp Mili::forEdge = QRegExp("x[1-9]+[0-9]*/((y[1-9]+[0-9]*(,y[1-9]+[0-9]*)*)|(-))");
 
 Mili::Mili(QStringList data) : Abstract(data)
@@ -111,7 +111,7 @@ QString Mili::tipEdge() const
             .arg(countX).arg(countY);
 }
 
-const QRegExp Mura::forNode = QRegExp("a[0-9]+/((y[1-9]+[0-9]*(,y[1-9]+[0-9]*)*)|(-))");
+const QRegExp Mura::forNode = QRegExp("a(0|[1-9][0-9]*)/((y[1-9]+[0-9]*(,y[1-9]+[0-9]*)*)|(-))");
 const QRegExp Mura::forEdge = QRegExp("x[1-9]+[0-9]*(,x[1-9]+[0-9]*)*");
 
 Mura::Mura(QStringList data) : Abstract(data)
