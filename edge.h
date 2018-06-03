@@ -3,6 +3,8 @@
 
 #include <QGraphicsItem>
 #include "nodeedgeparent.h"
+
+class GraphWidget;
 class Node;
 
 class Edge : public NodeEdgeParent

@@ -5,14 +5,16 @@
 #include <QPainter>
 #include <QStyleOption>
 #include <QDebug>
-//#include <cmath>
+#include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
 
 const qreal PI = atan(1) * 4;
 uint Edge::_idStatic = 0;
 int Edge::_offsAngle = 5;
 
 Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
-    : id(_idStatic++), arrowSize(15), textEdge(textArrow)
+    : NodeEdgeParent(sourceNode->graph),
+      id(_idStatic++), arrowSize(15), textEdge(textArrow)
 {
     setFlag(QGraphicsItem::ItemIsSelectable);
     source = sourceNode;

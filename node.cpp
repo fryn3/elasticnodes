@@ -6,20 +6,20 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOption>
-
+#include <QDebug>
 
 const QPen Node::_pen = QPen(Qt::black, 2);
 uint Node::_idStatic = 0;
 
 Node::Node(GraphWidget *graphWidget, QString text)
-    : id(_idStatic++), graph(graphWidget)
+    : NodeEdgeParent(graphWidget), id(_idStatic++)//, graph(graphWidget)
 {
     setFlag(ItemIsSelectable);
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
     setZValue(10);
-    graphWidget->scene()->addItem(this);    // сразу добавляет на сцену
+    graph->scene()->addItem(this);    // сразу добавляет на сцену
     if (text.isEmpty()) {
         textInNode = QString("%1").arg(id);
     } else {

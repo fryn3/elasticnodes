@@ -5,8 +5,8 @@
 #include <QList>
 #include <QString>
 #include "nodeedgeparent.h"
-class Edge;
 class GraphWidget;
+class Edge;
 QT_BEGIN_NAMESPACE
 class QGraphicsSceneMouseEvent;
 QT_END_NAMESPACE
@@ -38,7 +38,6 @@ protected:
 private:
     QList<Edge *> edgeList;
     QPointF newPos;
-    GraphWidget *graph;
     static uint _idStatic;
 };
 
