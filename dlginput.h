@@ -3,12 +3,21 @@
 
 #include <QObject>
 #include <QWidget>
+#include <QGridLayout>
+#include <QPushButton>
+#include <QLabel>
+#include <QLineEdit>
 
 class DlgInput : public QWidget
 {
     Q_OBJECT
 public:
     explicit DlgInput(QWidget *parent = nullptr);
+    ~DlgInput() { };
+    QLabel *lTipInput;   // Подсказки ввода
+    QLineEdit *eInput;
+    QPushButton *btnApply;   // Применить ввод (с проверкой корректности).
+protected:
 
 signals:
 

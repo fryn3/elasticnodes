@@ -6,7 +6,8 @@ HEADERS += \
         graphwidget.h \
     win.h \
     automata.h \
-    nodeedgeparent.h
+    nodeedgeparent.h \
+    dlginput.h
 
 SOURCES += \
         edge.cpp \
@@ -14,5 +15,7 @@ SOURCES += \
         node.cpp \
         graphwidget.cpp \
     win.cpp \
-    automata.cpp
+    automata.cpp \
+    dlginput.cpp \
+    nodeedgeparent.cpp
 
