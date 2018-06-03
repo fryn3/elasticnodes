@@ -1,5 +1,6 @@
 #include "win.h"
-#include "QDebug"
+#include <QDebug>
+#include <QApplication>
 Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
 {
     {
@@ -20,9 +21,13 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
             btnDelete->setFont(QFont("Times", 20, QFont::Bold));
             btnDelete->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
             btnDelete->setEnabled(false);
+            btnCheck = new QPushButton("Проверить", this);
+            btnCheck->setFont(QFont("Times", 20, QFont::Bold));
+            btnCheck->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
             layout->addWidget(btnCreateNode);
             layout->addWidget(btnConnectNode);
             layout->addWidget(btnDelete);
+            layout->addWidget(btnCheck);
             mainLayout->addLayout(layout);
         }
         lTip = new QLabel(this);
@@ -30,29 +35,18 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
         mainLayout->addWidget(lTip);
         grafViewScene = new GraphWidget(this);
         mainLayout->addWidget(grafViewScene);
-        {
-            QGridLayout *layout = new QGridLayout(parent);
-            lTipInput = new QLabel("Подсказки тут",this);
-            layout->addWidget(lTipInput, 0, 0, 1, 2);
-            eInput = new QLineEdit(this);
-            eInput->setEnabled(false);
-            layout->addWidget(eInput, 1, 0);
-            btnApply = new QPushButton("Применить", this);
-            btnApply->setEnabled(false);
-            layout->addWidget(btnApply, 1, 1);
-            btnCheck = new QPushButton("Проверить!", this);
-            btnCheck->setSizePolicy(QSizePolicy::Preferred,QSizePolicy::Expanding);
-            layout->addWidget(btnCheck, 0, 2, 2, 1);
-            mainLayout->addLayout(layout);
-        }
     }
+    dlgInput = new DlgInput();
+
     connect(btnCreateNode, &QPushButton::clicked, this, &Win::onBtnCreateNodeClicked);
     connect(btnConnectNode, &QPushButton::clicked, this, &Win::onBtnConnectNodeClicked);
     connect(btnDelete, &QPushButton::clicked, this, &Win::onBtnDeleteClicked);
     connect(grafViewScene->scene(), &QGraphicsScene::selectionChanged, this, &Win::sceneSelectionChanged);
-    connect(eInput, &QLineEdit::textChanged, this, &Win::eInputTextChange);
-    connect(btnApply, &QPushButton::clicked, this, &Win::onBtnApplyClicked);
+    connect(dlgInput->eInput, &QLineEdit::textChanged, this, &Win::eInputTextChange);
+    connect(dlgInput->btnApply, &QPushButton::clicked, this, &Win::onBtnApplyClicked);
     connect(btnCheck, &QPushButton::clicked, this, &Win::onBtnCheckClicked);
+    connect(grafViewScene, &GraphWidget::editItem, this, &Win::showInput);
+
     automat = Automata::create(QApplication::arguments());
     if (automat->type() != Automata::Abstract::Type) {
         lNameGraf->setText((automat->type() == Automata::Mili::Type? "Автомат Мили": "Автомат Мура"));
@@ -62,26 +56,38 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
 
 Win::~Win() { }
 
-void Win::designItem(QGraphicsItem *it)
+void Win::closeEvent(QCloseEvent *event)
 {
-    if (!it) {  // nullptr
+    dlgInput->close();
+    // Важно! disconnect нужен для корректного выхода из приложения!
+    disconnect(grafViewScene->scene(), 0, 0, 0);
+}
+
+void Win::showInput()
+{
+    if (grafViewScene->scene()->selectedItems().size() == 0) {  // nullptr
         // Ничего не выделено
-        lTipInput->clear();
-        eInput->clear();
-        eInput->setEnabled(false);
+        dlgInput->lTipInput->clear();
+        dlgInput->eInput->clear();
+        dlgInput->eInput->setEnabled(false);
+        dlgInput->hide();
     } else {
-        eInput->setEnabled(true);
+        QGraphicsItem *it;
+        it = grafViewScene->scene()->selectedItems().at(0);
+        dlgInput->eInput->setEnabled(true);
         if (it->type() == Node::Type) {
             Node *n = qgraphicsitem_cast<Node *>(it);
-            eInput->setText(n->textContent());
-            eInput->setValidator(new QRegExpValidator(automat->regExpNode()));
-            lTipInput->setText(automat->tipNode());
+            dlgInput->eInput->setText(n->textContent());
+            dlgInput->eInput->setValidator(new QRegExpValidator(automat->regExpNode()));
+            dlgInput->lTipInput->setText(automat->tipNode());
         } else if (it->type() == Edge::Type) {
             Edge *e = qgraphicsitem_cast<Edge *>(it);
-            eInput->setText(e->textContent());
-            eInput->setValidator(new QRegExpValidator(automat->regExpEdge()));
-            lTipInput->setText(automat->tipEdge());
+            dlgInput->eInput->setText(e->textContent());
+            dlgInput->eInput->setValidator(new QRegExpValidator(automat->regExpEdge()));
+            dlgInput->lTipInput->setText(automat->tipEdge());
         }
+        dlgInput->show();
+        dlgInput->activateWindow();
     }
 }
 
@@ -173,10 +179,11 @@ void Win::onBtnDeleteClicked()
 
 void Win::eInputTextChange()
 {
-    if(eInput->hasAcceptableInput())
-        btnApply->setEnabled(true);
-    else
-        btnApply->setEnabled(false);
+    if(dlgInput->eInput->hasAcceptableInput()) {
+        dlgInput->btnApply->setEnabled(true);
+    } else {
+        dlgInput->btnApply->setEnabled(false);
+    }
 }
 
 void Win::onBtnApplyClicked()
@@ -189,7 +196,7 @@ void Win::onBtnApplyClicked()
     auto it = grafViewScene->scene()->selectedItems().at(0);
     NodeEdgeParent *nodeEdge = dynamic_cast<NodeEdgeParent*>(it);
     if (nodeEdge) {
-        nodeEdge->setTextContent(eInput->text());
+        nodeEdge->setTextContent(dlgInput->eInput->text());
     } else { // if (it->type() == Edge::Type) {
         qDebug() << "It does not NodeEdgeParent";
     }
@@ -347,6 +354,7 @@ void Win::onBtnCheckClicked()
 
 void Win::sceneSelectionChanged()
 {
+    dlgInput->hide();
     QList<QGraphicsItem *> l = grafViewScene->scene()->selectedItems();
     if (l.size() == 1) {
         lTip->setText("Выделена вершина. ");
@@ -384,13 +392,11 @@ void Win::sceneSelectionChanged()
             _source = nullptr;
         }
         btnDelete->setEnabled(true);
-        designItem(l.at(0));
     } else if (l.size() > 1) {
         // Всегда должено быть выделено не более 1ого элемента
         qDebug() << "grafViewScene->scene()->selectedItems().size() == " << l.size();
     } else {
         // Пропало выделение (после удаления или нажатия на "Соединить")
-        designItem(nullptr);
         btnDelete->setEnabled(false);
     }
 }

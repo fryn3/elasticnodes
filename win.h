@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include "graphwidget.h"
 #include "automata.h"
+#include "dlginput.h"
 
 
 class Win : public QWidget
@@ -28,18 +29,17 @@ class Win : public QWidget
 public:
     explicit Win(QWidget *parent = nullptr);
     ~Win();
+    void closeEvent(QCloseEvent *event);
     Automata::Abstract *automat;
+
 private:
-    // GUI
     QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
     QLabel *lNameGraf,  // Для вывода имя графа: Мили или Мура
             *lTip;      // Подсказки для всего
     GraphWidget *grafViewScene;
-    QLabel *lTipInput;   // Подсказки ввода
-    QLineEdit *eInput;
-    QPushButton *btnApply;   // Применить ввод (с проверкой корректности).
     QPushButton *btnCheck;   // Проверка всего графа с вариантом.
-    // var and func
+    DlgInput *dlgInput;
+
     Node *_source;  // Сохраняет вершину при нажатии на кнопку "Соединить"
     // Флаг поднимается при нажатии на кнопку "Соединить"
     // connFlag == 1 Надо отметить "Источник" потом "Получатель"
@@ -47,10 +47,10 @@ private:
     int connFlag;
     QList <Node*> nodes;
     QList <Edge*> edges;
-    void designItem(QGraphicsItem *it);
 signals:
 
 public slots:
+    void showInput();
     void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
     void onBtnDeleteClicked();
