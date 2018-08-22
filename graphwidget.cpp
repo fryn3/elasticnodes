@@ -14,6 +14,7 @@ GraphWidget::GraphWidget(QWidget *parent)
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
     scale(qreal(0.8), qreal(0.8));
+    bezierEdge=NULL;
 }
 
 void GraphWidget::addNode()
@@ -32,6 +33,28 @@ void GraphWidget::addNode()
     }
     node1->setPos(x, y);
 }
+
+void GraphWidget::mousePressEvent(QMouseEvent *event){
+    switch(event->button()){
+    case Qt::RightButton:
+        if (scene()->selectedItems().size()>0){
+            //qDebug()<<" Clicked right";
+            emit GraphWidget::editItem();
+        }
+
+
+        break;
+
+    default:
+
+        break;
+    }
+\
+    QGraphicsView::mousePressEvent(event);
+}
+
+
+
 
 void GraphWidget::keyPressEvent(QKeyEvent *event)
 {
@@ -66,8 +89,13 @@ void GraphWidget::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Enter:
         shuffle();
         break;
+
+    case Qt::RightButton:
+        //emit editItem();
+        //QGraphicsView::keyPressEvent(event);
+        break;
     default:
-        qDebug() << event->key();
+
         QGraphicsView::keyPressEvent(event);
     }
 }
@@ -104,4 +132,21 @@ void GraphWidget::zoomIn()
 void GraphWidget::zoomOut()
 {
     scaleView(1 / qreal(1.2));
+}
+
+void GraphWidget::startBezier(Edge *e){
+    bezierEdge=e;
+}
+
+void GraphWidget::mouseReleaseEvent(QMouseEvent *event){
+    if (bezierEdge!=NULL){
+        bezierEdge->bezier.setX(event->x());
+        bezierEdge->bezier.setY(event->y());
+        qDebug()<<"graph release"<<event->x()<<" "<<event->y()<<" "<<event->globalX()<<" "<<event->globalY();
+
+        bezierEdge->adjust();
+        bezierEdge=NULL;
+    }
+    QGraphicsView::mouseReleaseEvent(event);
+
 }

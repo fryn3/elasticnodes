@@ -22,6 +22,8 @@ public:
     enum { Type = NodeEdgeParent::Type + 2 };
     int type() const override { return Type; }
 
+    QPointF bezier;
+
 protected:
     QString textEdge;
     QRectF boundingRect() const override;

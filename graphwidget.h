@@ -20,7 +20,7 @@ public:
     GraphWidget(QWidget *parent = 0);
 
     void itemMoved();
-
+    void startBezier(Edge *e);
 public slots:
     void addNode();
     void shuffle();
@@ -30,13 +30,19 @@ public slots:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    //void contextMenuEvent(QContextMenuEvent *event);
+    void mousePressEvent(QMouseEvent *event) override;
 #if QT_CONFIG(wheelevent)
     void wheelEvent(QWheelEvent *event) override;
-#endif
-    void scaleView(qreal scaleFactor);
 
+#endif
+    Edge *bezierEdge;
+    void scaleView(qreal scaleFactor);
+    void mouseReleaseEvent(QMouseEvent *event);
 signals:
     void editItem();
+
+
 };
 
 #endif // GRAPHWIDGET_H

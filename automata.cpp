@@ -37,6 +37,7 @@ Abstract::Abstract(QStringList data) : countX(0), countY(0), _fail(false)
     outFile = data[NAME_FILE];
     countA = data[COLUMNS].toInt();
     int rows = data[ROWS].toInt();
+    qDebug()<<data.size()<<endl<<rows<<endl<<countA<<COUNT_HEADER<<endl;
     if (data.size() != rows * countA + COUNT_HEADER) {
         qDebug() << "Format table error";
         _fail = true;

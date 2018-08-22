@@ -34,9 +34,7 @@ public:
 
 private:
     QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
-    QLabel *lNameGraf,  // Для вывода имя графа: Мили или Мура
-            *lTip;      // Подсказки для всего
-    GraphWidget *grafViewScene;
+
     QPushButton *btnCheck;   // Проверка всего графа с вариантом.
     DlgInput *dlgInput;
 
@@ -45,11 +43,18 @@ private:
     // connFlag == 1 Надо отметить "Источник" потом "Получатель"
     // connFlag == 2 Надо отметить только "Получатель"
     int connFlag;
+public:
+    Edge * _edge;
     QList <Node*> nodes;
+
+    QLabel *lNameGraf,  // Для вывода имя графа: Мили или Мура
+    *lTip;      // Подсказки для всего
+    GraphWidget *grafViewScene;
     QList <Edge*> edges;
 signals:
 
 public slots:
+    void CreateAutomat(QStringList data);
     void showInput();
     void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
@@ -59,6 +64,10 @@ public slots:
     void onBtnCheckClicked();
     void sceneSelectionChanged();
     void sceneSave();
+    void dropEvent(QDropEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
+    //Загрузить автомат
+    void loadAuto(int type,QStringList ylist,QStringList xlist,int size);
 };
 
 #endif // WIN_H
