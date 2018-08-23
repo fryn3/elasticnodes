@@ -6,67 +6,115 @@
 #include <QMultiMap>
 namespace Automata {
 
-class Abstract;
+class Type;
 class Mili;
 class Mura;
-Abstract *create(QStringList data);
+class Format;
+class Table;
+class Matrix;
+class MiliTable;
+class MiliMatrix;
+class MuraTable;
+class MuraMatrix;
 
-class Abstract
+// Тут можно попробовать использовать union
+struct Universal {
+    Type *t;
+    Format *f;
+    Universal(const QStringList data, int type, int format);
+};
+
+Universal *create(const QStringList data, int formatInputData);
+
+class Type
 {
 public:
-    Abstract(QStringList data);
-    virtual ~Abstract() = default;
-    enum { Type = -1 };
-    virtual int type() const { return Type; }
-    QString outFile;
-    // Таблица графа в строковом представлении
-    QVector<QVector<QString> > table;
-    int countA;                         // Кол-во состояний
-    int countX;                         // Кол-во вых. сигн. В абстр классе == 0!
-    int countY;                         // Кол-во вход. сигн. В абстр классе == 0!
-    // Проверяет корректность графа.
-    bool check(QVector<QMultiMap<QString, int> > checkTable) const;
-    bool fail() const;
-    virtual QRegExp regExpNode() const;
-    virtual QRegExp regExpEdge() const;
-    virtual QString tipNode() const;
-    virtual QString tipEdge() const;
+    virtual ~Type() = default;
+    virtual int type() const = 0;
+    virtual QRegExp regExpNode() const = 0;
+    virtual QRegExp regExpEdge() const = 0;
+    virtual QString tipNode() const = 0;
+    virtual QString tipEdge() const = 0;
+};
+
+class Mili : public Type
+{
+public:
+    enum { Type = 0 };
+    int type() const override { return Type; }
+    QRegExp regExpNode() const override { return QRegExp("a(0|[1-9][0-9]*)"); }
+    QRegExp regExpEdge() const override { return QRegExp("x[1-9]+[0-9]*/((y[1-9]+[0-9]*(,y[1-9]+[0-9]*)*)|(-))"); }
+    QString tipNode() const override { return "Шаблон ввода: aK"; }
+    QString tipEdge() const override { return "Шаблон ввода: xK/yL[,yM] или xK/-"; }
+};
+
+class Mura : public Type
+{
+public:
+    enum { Type = 1 };
+    int type() const override { return Type; }
+    QRegExp regExpNode() const override { return QRegExp("a(0|[1-9][0-9]*)/((y[1-9]+[0-9]*(,y[1-9]+[0-9]*)*)|(-))"); }
+    QRegExp regExpEdge() const override { return QRegExp("x[1-9]+[0-9]*(,x[1-9]+[0-9]*)*"); }
+    QString tipNode() const override { return "Шаблон ввода: aK/yL[,yM] или aK/-"; }
+    QString tipEdge() const override { return "Шаблон ввода: aK"; }
+};
+
+class Format
+{
+public:
+    virtual ~Format() = default;
+    virtual int format() const = 0;
+    bool fail() const { return _fail; }
 protected:
-    // Таблица графа в численном представлении
-    QVector<QMultiMap<QString, int> > _checkTable;
+    Format();
     bool _fail;
 };
 
-class Mili : public Abstract
+class Table : public Format
 {
 public:
-    Mili(QStringList data);
-    enum { Type = 0 };
-    int type() const override { return Type; }
-    QRegExp regExpNode() const override;
-    QRegExp regExpEdge() const override;
-    QString tipNode() const override;
-    QString tipEdge() const override;
-private:
-    // Проверяет корректность ввода с помощью QString::contains
-    static const QRegExp forNode;
-    static const QRegExp forEdge;
+    enum { Format = 0 };
+    int format() const override { return Format; }
+    int countA;                         // Кол-во состояний
+    int countX;                         // Кол-во вых. сигн. В абстр классе == 0!
+    int countY;                         // Кол-во вход. сигн. В абстр классе == 0!
+    bool check(QVector<QMultiMap<QString, int> > checkTable) const { return _checkTable == checkTable; }
+protected:
+    QVector<QMultiMap<QString, int> > _checkTable;
 };
 
-class Mura : public Abstract
+class Matrix : public Format
 {
 public:
-    Mura(QStringList data);
-    enum { Type = 1 };
-    int type() const override { return Type; }
-    QRegExp regExpNode() const override;
-    QRegExp regExpEdge() const override;
-    QString tipNode() const override;
-    QString tipEdge() const override;
-private:
-    // Проверяет корректность ввода с помощью QString::contains
-    static const QRegExp forNode;
-    static const QRegExp forEdge;
+    enum { Format = 1 };
+    int format() const override { return Format; }
+    bool check(QVector<QVector<int> > checkTable) const { return _checkTable == checkTable; }
+protected:
+    QVector<QVector<int> > _checkTable;
+};
+
+class MiliTable : public Mili, public Table
+{
+public:
+    MiliTable(QStringList data);
+};
+
+class MiliMatrix : public Mili, public Matrix
+{
+public:
+    MiliMatrix(QStringList data);
+};
+
+class MuraTable : public Mura, public Table
+{
+public:
+    MuraTable(QStringList data);
+};
+
+class MuraMatrix : public Mura, public Matrix
+{
+public:
+    MuraMatrix(QStringList data);
 };
 
 }
