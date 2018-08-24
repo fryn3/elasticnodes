@@ -55,23 +55,23 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
     connect(grafViewScene, &GraphWidget::editItem, this, &Win::showInput);
 }
 
-    void Win::CreateAutomat (QStringList data)
+    void Win::CreateAutomat (const QStringList data)
     {
-        automat = Automata::create(data);
-        if (automat->type() != Automata::Abstract::Type)
+        automat = Automata::create(data, 0);
+        if (automat)
         {
-            lNameGraf->setText((automat->type() == Automata::Mili::Type? "Автомат Мили": "Автомат Мура"));
-            lTip->setText(QString("Вых файл: %1.png").arg(automat->outFile));
+            lNameGraf->setText((automat->t->type() == Automata::Mili::Type? "Автомат Мили": "Автомат Мура"));
+            lTip->setText(QString("Вых файл: OutFile.png")); //.arg(automat->outFile));   // Поле имя графа удалено
         }
     }
 
 Win::~Win() { }
 
-void Win::closeEvent(QCloseEvent *event)
+void Win::closeEvent(QCloseEvent */*event*/)
 {
     dlgInput->close();
     // Важно! disconnect нужен для корректного выхода из приложения!
-    disconnect(grafViewScene->scene(), 0, 0, 0);
+    disconnect(grafViewScene->scene(), nullptr, nullptr, nullptr);
 }
 
 void Win::showInput()
@@ -93,14 +93,14 @@ void Win::showInput()
         if (it->type() == Node::Type) {
             Node *n = qgraphicsitem_cast<Node *>(it);
 
-            dlgInput->eInput->setValidator(new QRegExpValidator(automat->regExpNode()));
+            dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpNode()));
             dlgInput->eInput->setText(n->textContent());
-            dlgInput->lTipInput->setText(automat->tipNode());
+            dlgInput->lTipInput->setText(automat->t->tipNode());
         } else if (it->type() == Edge::Type) {
             Edge *e = qgraphicsitem_cast<Edge *>(it);
-            dlgInput->eInput->setValidator(new QRegExpValidator(automat->regExpEdge()));
+            dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpEdge()));
             dlgInput->eInput->setText(e->textContent());
-            dlgInput->lTipInput->setText(automat->tipEdge());
+            dlgInput->lTipInput->setText(automat->t->tipEdge());
         }
 
         //dlgInput->show();
@@ -119,22 +119,28 @@ void Win::onBtnCreateNodeClicked() {
     int x, y;           // расположение вершины на сцене
     int numNode;
     bool flFinding;     // флаг нахождения, при решение с каким состоянием создавать вершину
-    for (int i = 0; i < automat->countA; i++) {
-        flFinding = false;
-        for (int j = 0; j < nodes.size(); j++) {
-            QString s = nodes[j]->textContent().section(QRegExp("[^0-9]+"), 0, 0, QString::SectionSkipEmpty);
-            if (s.toInt() == i) {
-                flFinding = true;
+    Node *node;
+    if (automat) {
+        for (int i = 0; i < automat->f->countA; i++) {
+            flFinding = false;
+            for (int j = 0; j < nodes.size(); j++) {
+                QString s = nodes[j]->textContent().section(QRegExp("[^0-9]+"), 0, 0, QString::SectionSkipEmpty);
+                if (s.toInt() == i) {
+                    flFinding = true;
+                    break;
+                }
+            }
+            if (!flFinding || i == automat->f->countA - 1) {
+                numNode = i;
                 break;
             }
         }
-        if (!flFinding || i == automat->countA - 1) {
-            numNode = i;
-            break;
-        }
+        QString nodeText = (automat->t->type() == Automata::Mura::Type ? "a%1/y1" : "a%1");
+        node = new Node(grafViewScene, QString(nodeText).arg(numNode));
+    } else {
+        node = new Node(grafViewScene);
+        numNode = node->id;
     }
-    QString nodeText = (automat->type() == Automata::Mura::Type ? "a%1/y1" : "a%1");
-    Node *node = new Node(grafViewScene, QString(nodeText).arg(numNode));
     // Определяет сколько вершин будут появлятся на одной оси У
     int nodeInRow = 6;
     x = - 2 * (2 * Node::Radius + 10) +
@@ -246,14 +252,14 @@ void Win::onBtnApplyClicked()
 void Win::onBtnCheckClicked()
 {
     QMessageBox msgBox;
-    if (nodes.size() != automat->countA) {
+    if (nodes.size() != automat->f->countA) {
         msgBox.setText("Error.");
         msgBox.exec();
         return;
     }
     int flFail = 0;
     QVector<QMultiMap<QString, int> > ch;
-    if (automat->type() == Automata::Mura::Type) {
+    if (automat->t->type() == Automata::Mura::Type) {
         ch.resize(nodes.size());
         // Проверка на очередность вершин
         for (int i = 0; i < nodes.size(); i++) {
@@ -271,7 +277,7 @@ void Win::onBtnCheckClicked()
             // "a2/y1,y3" or "a1/-"
             QStringList nums = nodes.at(i)->textContent()
                     .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
-            if (nums.at(0).toInt() >= automat->countA) {
+            if (nums.at(0).toInt() >= automat->f->countA) {
                 flFail = 2;
                 break;
             }
@@ -301,7 +307,7 @@ void Win::onBtnCheckClicked()
         }
         // Заполнение пропусков
         for(int i = 0; i < ch.size(); i++) {
-            for (int j = 1; j < automat->countX + 1; j++) {
+            for (int j = 1; j < automat->f->countX + 1; j++) {
                 bool flMissKey = true;
                 for (auto key : ch[i].uniqueKeys()) {
                     if (tr("x%1").arg(j) == key) {
@@ -314,7 +320,7 @@ void Win::onBtnCheckClicked()
                 }
             }
         }
-    } else if (automat->type() == Automata::Mili::Type) {
+    } else if (automat->t->type() == Automata::Mili::Type) {
         ch.resize(nodes.size());
         // Проверка на очередность вершин
         for (int i = 0; i < nodes.size(); i++) {
@@ -339,7 +345,7 @@ void Win::onBtnCheckClicked()
             // "x1/y1,y2" or "x2/-"
             QStringList nums = edges.at(i)->textContent()
                     .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
-            if (nums.at(0).toInt() > automat->countX) {
+            if (nums.at(0).toInt() > automat->f->countX) {
                 flFail = 2;
                 break;
             }
@@ -348,7 +354,7 @@ void Win::onBtnCheckClicked()
                 ch[sourceNum].insert(tr("x%1y").arg(nums.at(0)), 0);
             } else {
                 for (int j = 1; j < nums.size(); j++) {
-                    if (nums.at(j).toInt() > automat->countY) {
+                    if (nums.at(j).toInt() > automat->f->countY) {
                         flFail = 3;
                         break;
                     }
@@ -357,8 +363,8 @@ void Win::onBtnCheckClicked()
             }
         }
         // Заполнение пустот
-        for (int i = 0; i < automat->countA; i++) {
-            for (int j = 1; j < automat->countX; j++) {
+        for (int i = 0; i < automat->f->countA; i++) {
+            for (int j = 1; j < automat->f->countX; j++) {
                 bool flMissKey = true;
                 for(auto key : ch[i].uniqueKeys()) {
                     if (tr("x%1a").arg(j) == key) {
@@ -384,7 +390,7 @@ void Win::onBtnCheckClicked()
     }
     if (!flFail && automat->check(ch)) {
         QPixmap pixMap = QPixmap::grabWidget(grafViewScene);
-        pixMap.save(automat->outFile + ".png");
+        pixMap.save("OutFile.png");
         msgBox.setText("Всё верно! Результат сохранён!");
         msgBox.exec();
     } else {
@@ -420,7 +426,7 @@ void Win::sceneSelectionChanged()
                     }
                 }*/
                 if (!miss) {
-                    Edge *e = new Edge(_source, node, (automat->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                    Edge *e = new Edge(_source, node, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
                     edges.append(e);
                     grafViewScene->scene()->addItem(e);
                     btnConnectNode->setChecked(false);
@@ -459,15 +465,15 @@ void Win::sceneSelectionChanged()
 void Win::sceneSave()
 {
     QPixmap pixMap = QPixmap::grabWidget(grafViewScene);
-    pixMap.save(automat->outFile + ".png");
+    pixMap.save("OutFile.png");
 }
 
-void Win::mouseReleaseEvent(QMouseEvent *event){
+void Win::mouseReleaseEvent(QMouseEvent */*event*/){
     qDebug()<<"Released";
 }
 
-void Win::dropEvent(QDropEvent *event){
+void Win::dropEvent(QDropEvent */*event*/){
     qDebug()<<"Dropped";
 }
 
-void Win::loadAuto(int type,QStringList ylist,QStringList xlist,int size){}
+//void Win::loadAuto(int type,QStringList ylist,QStringList xlist,int size){}

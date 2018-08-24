@@ -13,15 +13,17 @@ class Format;
 class Table;
 class Matrix;
 class MiliTable;
-class MiliMatrix;
 class MuraTable;
+class MiliMatrix;
 class MuraMatrix;
 
-// Тут можно попробовать использовать union
+// Для указателей можно попробовать использовать union
 struct Universal {
     Type *t;
     Format *f;
     Universal(const QStringList data, int type, int format);
+    bool check(QVector<QMultiMap<QString, int> > ch);
+    bool check(QVector<QVector<int> > ch);
 };
 
 Universal *create(const QStringList data, int formatInputData);
@@ -65,9 +67,13 @@ public:
     virtual ~Format() = default;
     virtual int format() const = 0;
     bool fail() const { return _fail; }
+    int countA;                         // Кол-во состояний
+    int countX;                         // Кол-во вых. сигн. В абстр классе == 0!
+    int countY;                         // Кол-во вход. сигн. В абстр классе == 0!
 protected:
-    Format();
+    Format(const QStringList source);
     bool _fail;
+    QVector<QVector<QString> > data;
 };
 
 class Table : public Format
@@ -75,12 +81,10 @@ class Table : public Format
 public:
     enum { Format = 0 };
     int format() const override { return Format; }
-    int countA;                         // Кол-во состояний
-    int countX;                         // Кол-во вых. сигн. В абстр классе == 0!
-    int countY;                         // Кол-во вход. сигн. В абстр классе == 0!
-    bool check(QVector<QMultiMap<QString, int> > checkTable) const { return _checkTable == checkTable; }
+    bool check(QVector<QMultiMap<QString, int> > check) const { return _check == check; }
 protected:
-    QVector<QMultiMap<QString, int> > _checkTable;
+    Table(const QStringList source);
+    QVector<QMultiMap<QString, int> > _check;
 };
 
 class Matrix : public Format
@@ -88,33 +92,35 @@ class Matrix : public Format
 public:
     enum { Format = 1 };
     int format() const override { return Format; }
-    bool check(QVector<QVector<int> > checkTable) const { return _checkTable == checkTable; }
+    bool check(QVector<QVector<int> > check) const { return _check == check; }
 protected:
-    QVector<QVector<int> > _checkTable;
+    Matrix(const QStringList source);
+    QVector<QVector<int> > _check;
 };
 
 class MiliTable : public Mili, public Table
 {
 public:
-    MiliTable(QStringList data);
-};
-
-class MiliMatrix : public Mili, public Matrix
-{
-public:
-    MiliMatrix(QStringList data);
+    MiliTable(const QStringList source);
 };
 
 class MuraTable : public Mura, public Table
 {
 public:
-    MuraTable(QStringList data);
+    MuraTable(const QStringList source);
+};
+
+class MiliMatrix : public Mili, public Matrix
+{
+public:
+    MiliMatrix(const QStringList data);
 };
 
 class MuraMatrix : public Mura, public Matrix
 {
 public:
-    MuraMatrix(QStringList data);
+    MuraMatrix(const QStringList data);
+protected:
 };
 
 }

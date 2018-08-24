@@ -15,7 +15,7 @@ int Edge::_offsAngle = 5;
 
 Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     : NodeEdgeParent(sourceNode->graph),
-      id(_idStatic++), arrowSize(15), textEdge(textArrow)
+      id(_idStatic++), textEdge(textArrow), arrowSize(15)
 {
     setFlag(QGraphicsItem::ItemIsSelectable);
     source = sourceNode;

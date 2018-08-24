@@ -30,7 +30,7 @@ public:
     explicit Win(QWidget *parent = nullptr);
     ~Win();
     void closeEvent(QCloseEvent *event);
-    Automata::Abstract *automat;
+    Automata::Universal *automat;
 
 private:
     QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
@@ -54,7 +54,7 @@ public:
 signals:
 
 public slots:
-    void CreateAutomat(QStringList data);
+    void CreateAutomat(const QStringList data);
     void showInput();
     void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
@@ -67,7 +67,7 @@ public slots:
     void dropEvent(QDropEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     //Загрузить автомат
-    void loadAuto(int type,QStringList ylist,QStringList xlist,int size);
+//    void loadAuto(int type,QStringList ylist,QStringList xlist,int size);
 };
 
 #endif // WIN_H
