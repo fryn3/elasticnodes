@@ -54,7 +54,7 @@ public:
 signals:
 
 public slots:
-    void CreateAutomat(const QStringList data);
+    bool CreateAutomat(QStringList source);
     void showInput();
     void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
@@ -67,7 +67,9 @@ public slots:
     void dropEvent(QDropEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     //Загрузить автомат
-//    void loadAuto(int type,QStringList ylist,QStringList xlist,int size);
+    //    void loadAuto(int type,QStringList ylist,QStringList xlist,int size);
+    void checkedTable();
+    void checkedMatrix();
 };
 
 #endif // WIN_H

@@ -6,6 +6,18 @@
 #include <QMultiMap>
 namespace Automata {
 
+namespace FormatFile {
+enum {
+//    FULL_NAME_EXE,
+//    NAME_FILE,  // номер варианта
+    TYPE,      // mili/mura
+    FORMAT,    // table/matrix
+    COLUMNS,     // кол-во состояний
+    ROWS,
+    COUNT_HEADER
+};
+}
+
 class Type;
 class Mili;
 class Mura;
@@ -21,12 +33,13 @@ class MuraMatrix;
 struct Universal {
     Type *t;
     Format *f;
-    Universal(const QStringList data, int type, int format);
+    Universal(const QStringList data);
     bool check(QVector<QMultiMap<QString, int> > ch);
     bool check(QVector<QVector<int> > ch);
+    // Пока работает только для Matrix
+    bool check(QStringList ch);
+    friend bool operator== (const Universal &u1, const Universal &u2);
 };
-
-Universal *create(const QStringList data, int formatInputData);
 
 class Type
 {
@@ -70,6 +83,7 @@ public:
     int countA;                         // Кол-во состояний
     int countX;                         // Кол-во вых. сигн. В абстр классе == 0!
     int countY;                         // Кол-во вход. сигн. В абстр классе == 0!
+    friend bool operator== (const Format &f1, const Format &f2);
 protected:
     Format(const QStringList source);
     bool _fail;
@@ -92,10 +106,8 @@ class Matrix : public Format
 public:
     enum { Format = 1 };
     int format() const override { return Format; }
-    bool check(QVector<QVector<int> > check) const { return _check == check; }
 protected:
     Matrix(const QStringList source);
-    QVector<QVector<int> > _check;
 };
 
 class MiliTable : public Mili, public Table
@@ -113,14 +125,18 @@ public:
 class MiliMatrix : public Mili, public Matrix
 {
 public:
-    MiliMatrix(const QStringList data);
+    MiliMatrix(const QStringList source);
+protected:
+    QVector<QVector<QPair<int, QList<int> > > > matrix;
 };
 
 class MuraMatrix : public Mura, public Matrix
 {
 public:
-    MuraMatrix(const QStringList data);
+    MuraMatrix(const QStringList source);
 protected:
+    QVector<QVector<int> > matrixC;
+    QVector<QList<int> > Y;
 };
 
 }

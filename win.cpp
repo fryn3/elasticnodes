@@ -55,15 +55,17 @@ Win::Win(QWidget *parent) : QWidget(parent), _source(nullptr), connFlag(false)
     connect(grafViewScene, &GraphWidget::editItem, this, &Win::showInput);
 }
 
-    void Win::CreateAutomat (const QStringList data)
-    {
-        automat = Automata::create(data, 0);
-        if (automat)
-        {
-            lNameGraf->setText((automat->t->type() == Automata::Mili::Type? "Автомат Мили": "Автомат Мура"));
-            lTip->setText(QString("Вых файл: OutFile.png")); //.arg(automat->outFile));   // Поле имя графа удалено
-        }
+bool Win::CreateAutomat (QStringList source)
+{
+    automat = new Automata::Universal(source);
+    if (!automat->f || !automat->t){
+        qDebug() << "Win::CreateAutomat : !automat";
+        return false;
     }
+    lNameGraf->setText((automat->t->type() == Automata::Mili::Type ? "Автомат Мили": "Автомат Мура"));
+    lTip->setText(QString("Вых файл: OutFile.png"));
+    return true;
+}
 
 Win::~Win() { }
 
@@ -76,7 +78,6 @@ void Win::closeEvent(QCloseEvent */*event*/)
 
 void Win::showInput()
 {
-
     //qDebug()<<"show input";
     if (grafViewScene->scene()->selectedItems().size() == 0) {  // nullptr
         // Ничего не выделено
@@ -110,14 +111,15 @@ void Win::showInput()
     }
 }
 
-void Win::onBtnCreateNodeClicked() {
+void Win::onBtnCreateNodeClicked()
+{
     btnCheck->setEnabled(true);
     btnConnectNode->setChecked(false);
 
 
 
     int x, y;           // расположение вершины на сцене
-    int numNode;
+    uint numNode;
     bool flFinding;     // флаг нахождения, при решение с каким состоянием создавать вершину
     Node *node;
     if (automat) {
@@ -174,7 +176,7 @@ void Win::onBtnConnectNodeClicked()
             connFlag = 0;
         }
     }
-   /* if (!_source) {
+    /* if (!_source) {
         if (connFlag == 0) {    // это условие не обязательное
             lTip->setText("Выберите вершину источник, потом получатель дуги");
             connFlag = 1;
@@ -230,10 +232,10 @@ void Win::eInputTextChange()
 void Win::onBtnApplyClicked()
 {
     if (dlgInput->eInput->hasAcceptableInput()){
-    qDebug()<<"OK";
+        qDebug()<<"OK";
         if (grafViewScene->scene()->selectedItems().size() != 1) {
             qDebug() << "grafViewScene->scene()->selectedItems().size() == "
-                   << grafViewScene->scene()->selectedItems().size();
+                     << grafViewScene->scene()->selectedItems().size();
             return;
         }
         auto it = grafViewScene->scene()->selectedItems().at(0);
@@ -250,6 +252,15 @@ void Win::onBtnApplyClicked()
 }
 
 void Win::onBtnCheckClicked()
+{
+    if (automat->f->format() == Automata::Table::Format) {
+        checkedTable();
+    } else if (automat->f->format() == Automata::Matrix::Format) {
+        checkedMatrix();
+    }
+}
+
+void Win::checkedTable()
 {
     QMessageBox msgBox;
     if (nodes.size() != automat->f->countA) {
@@ -399,6 +410,63 @@ void Win::onBtnCheckClicked()
     }
 }
 
+void Win::checkedMatrix()
+{
+    QStringList result;
+    result.append(QString("%1").arg(automat->t->type()));
+    result.append(QString("%1").arg(automat->f->format()));
+    for (int aN = 0; aN < nodes.size(); aN++) {
+        bool flError = true;
+        foreach (auto node, nodes) {
+            if (node->textContent()
+                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
+                    .at(0).toInt() == aN) {
+                result.append(node->textContent().split("/").at(1));
+                flError = false;
+                break;
+            }
+        }
+        if (flError) {
+            qDebug() << "Вершины идут не по порядку: а0, а1, а4, а5";
+            QMessageBox msgBox;
+            msgBox.setText("Error.");
+            msgBox.exec();
+            return;
+        }
+    }
+    for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
+        for (auto destN = 0; destN < nodes.size(); destN++) {
+            bool findEdge = false;
+            foreach (auto edge, edges) {
+                if ((edge->sourceNode()->textContent()
+                        .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
+                        .at(0).toInt() == sourceN)
+                        && (edge->destNode()->textContent()
+                            .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
+                            .at(0).toInt() == destN)) {
+                    result.append(edge->textContent());
+                    findEdge = true;
+                }
+            }
+            if (!findEdge) {
+                result.append("-");
+            }
+        }
+    }
+
+    if (automat->check(result)) {
+        QPixmap pixMap = QPixmap::grabWidget(grafViewScene);
+        pixMap.save("OutFile.png");
+        QMessageBox msgBox;
+        msgBox.setText("Всё верно! Результат сохранён!");
+        msgBox.exec();
+    } else {
+        QMessageBox msgBox;
+        msgBox.setText("Неверно!");
+        msgBox.exec();
+    }
+}
+
 void Win::sceneSelectionChanged()
 {
     dlgInput->hide();
@@ -417,8 +485,8 @@ void Win::sceneSelectionChanged()
             } else if (connFlag == 2) {
                 // Нужно соединить с новой вершиной
                 // Проверка на повторное соединение
-               bool miss = false;
-               /*for (auto edg : _source->edges()) {
+                bool miss = false;
+                /*for (auto edg : _source->edges()) {
                     if (edg->sourceNode() == _source && edg->destNode() == node) {
                         miss = true;
                         lTip->setText("Попытка повторного соединения.");

@@ -5,123 +5,57 @@
 #include <QFile>
 #include <QDir>
 #include <QList>
-
+#include <QDebug>
 #include "win.h"
+
+const QString MILI = "/MiliMatrix.txt";
+const QString MURA = "/MuraMatrix.txt";
+const QString SELECTED_FILE = MURA;
 
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
 
-    //Окно приложения
     Win *widget = new Win;
 
-    //ВАЖНО!!!!
-    QStringList * automatdata = new QStringList();
-    automatdata->push_back("proga.exe");
-    automatdata->push_back("Automat");
+//    QFile in(QCoreApplication::applicationDirPath() + "/graph.txt");
+    QFile in(QCoreApplication::applicationDirPath() + MURA);
+    if (!in.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug() << QString("Запуск без файла %1.").arg(SELECTED_FILE);
+        qDebug() << "Директория,откуда запускается программа: "
+               << QCoreApplication::applicationDirPath() << endl;
+        return 101;
+    }
+    QTextStream stream(&in);
+    QStringList source;
+    while (true) {
+        QString line = stream.readLine();
+        if (line.isEmpty()) {
+            break;
+        }
+        source.append(line);
+    }
 
-    //Список игриков
-    QStringList *ylist = new QStringList();
-    //Список иксов
-    QStringList *xlist = new QStringList();
+    // Заглушка! Всегда type = matrix
+    source.insert(Automata::FormatFile::FORMAT, "1");
 
-    //Если graph.txt есть,то забьем его
-    QFile in(QCoreApplication::applicationDirPath()+"/graph.txt");
-     if (in.open(QIODevice::ReadOnly | QIODevice::Text))
-     {
-          QTextStream file(&in);
-         //Тип автомата
-         int auto_type = file.readLine().toInt();
-         automatdata->push_back(QString::number(auto_type)); // Кладём тип автомата к ВАЖНОМУ!!
-         //Размер ашек и тд
-         int auto_size = file.readLine().toInt();
-         automatdata->push_back(QString::number(auto_size)); // Кладём количество переходных состояний (ашек) к ВАЖНОМУ!!
-         automatdata->push_back(QString::number(auto_size)); // Кладём ЕЩЕ РАЗ о_О
-         if (auto_type == 1) {
-             //Автомат Мура..
-             //widget->lNameGraf->setText("Автомат Мура");
-             //Считаем массив игриков
-             for (int i=0;i<auto_size;i++)
-             {
-                QString tmp = file.readLine();
-                ylist->push_back(tmp);
-                //ЗАПИСЫВАЕМ В ВАЖНОЕ!!! СПЕРВА ИГРИКИ
-
-                    //А не, не записываем из-за automata::конструктора
-                    //automatdata->push_back(tmp);
-                //widget->onBtnCreateNodeClicked();
-                //widget->nodes.at(i)->setTextContent("a"+QString::number(i)+"/"+tmp);
-             }
-            //Массив иксов:
-             for (int i=0;i<auto_size;i++)
-                 for (int j=0;j<auto_size;j++)
-                 {
-                     QString tmp = file.readLine();
-                     xlist->push_back(tmp);
-                     //ЗАПИСЫВАЕМ В ВАЖНОЕ!!! ЗАТЕМЫ ИКСЫ
-                     automatdata->push_back(tmp);
-                 }
-             //Ребра массива иксов
-             for (int i=0;i<auto_size;i++)
-             {
-                 for (int j=0;j<auto_size;j++)
-                 {
-                     if (xlist->at(i*auto_size+j) != "-")
-                     {
-                         //qDebug()<<"Связь есть:"<<xlist->at(i*auto_size+j)<<"Между: "<<i<<" и "<<j<<endl;
-                         //Edge *e = new Edge(widget->nodes.at(i), widget->nodes.at(j),xlist->at(i*auto_size+j));
-                         //widget->edges.append(e);
-                         //widget->grafViewScene->scene()->addItem(e);
-                     }
-                 }
-             }
-         }
-         else
-         {
-             //Автомат Мили..
-             //qDebug()<<"Автомат мили, размер ашек:"<<auto_size<<endl;
-             //widget->lNameGraf->setText("Автомат Мили");
-             //Только массив иксов
-             for (int i=0;i<auto_size;i++)
-                 for (int j=0;j<auto_size;j++)
-                 {
-                     QString tmp = file.readLine();
-                     xlist->push_back(tmp);
-                     //ЗАПИСЫВАЕМ В ВАЖНОЕ!!! ИКСЫЫ
-                     automatdata->push_back(tmp);
-                 }
-             //Массив ашек заполним
-             //Считаем массив игриков
-             for (int i=0;i<auto_size;i++)
-             {
-                //widget->onBtnCreateNodeClicked();
-                //widget->nodes.at(i)->setTextContent("a"+QString::number(i));
-             }
-             //Ребра массива иксов
-             for (int i=0;i<auto_size;i++)
-             {
-                 for (int j=0;j<auto_size;j++)
-                 {
-                     if (xlist->at(i*auto_size+j) != "-/-")
-                     {
-                         qDebug()<<"Связь есть:"<<xlist->at(i*auto_size+j)<<"Между: "<<i<<" и "<<j<<endl;
-                         //Edge *e = new Edge(widget->nodes.at(i), widget->nodes.at(j),xlist->at(i*auto_size+j));
-                         //widget->edges.append(e);
-                         //widget->grafViewScene->scene()->addItem(e);
-                     }
-                 }
-             }
-         }
-         qDebug()<<"Размер:"<<auto_size<<"Тип:"<<auto_type<<endl;
-     }
-     else
-     {
-         qDebug()<<"Запуск без файла graph.txt. Директория,откуда запускается программа: "<<QCoreApplication::applicationDirPath() <<endl;
-     }
-
-    widget->CreateAutomat(*automatdata);
-    qDebug()<<"AutomatData"<<*automatdata<<endl;
-    widget->show();
+    // Вставляем кол-во строк. У Мура на одну строку больше.
+    if (source.at(Automata::FormatFile::TYPE).toInt() == Automata::Mili::Type) {
+        source.insert(Automata::FormatFile::ROWS, QString("%1")
+                      .arg(source.at(Automata::FormatFile::COLUMNS).toInt()));
+    } else if (source.at(Automata::FormatFile::TYPE).toInt() == Automata::Mura::Type) {
+        source.insert(Automata::FormatFile::ROWS, QString("%1")
+                      .arg(source.at(Automata::FormatFile::COLUMNS).toInt() + 1));
+    } else {
+        qDebug() << "main : Automata::FormatFile::TYPE error";
+        return 102;
+    }
+    if (!widget->CreateAutomat(source)) {
+        qDebug() << "main : !widget->CreateAutomat(source))";
+        return 103;
+    }
     widget->setWindowTitle("GE");
+    widget->show();
     return app.exec();
 }

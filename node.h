@@ -16,7 +16,7 @@ class Node : public NodeEdgeParent
 public:
     static const QPen _pen;
     Node(GraphWidget *graphWidget, QString textInNode = "");
-    virtual ~Node();
+    virtual ~Node() override;
     const uint id;
     void setTextContent(QString text) override;
     QString textContent() const override;
