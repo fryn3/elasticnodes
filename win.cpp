@@ -415,6 +415,12 @@ void Win::checkedMatrix()
     QStringList result;
     result.append(QString("%1").arg(automat->t->type()));
     result.append(QString("%1").arg(automat->f->format()));
+    result.append(QString("%1").arg(nodes.size()));
+    if (automat->t->type() == Automata::Mili::Type) {
+        result.append(QString("%1").arg(nodes.size()));
+    } else if (automat->t->type() == Automata::Mura::Type) {
+        result.append(QString("%1").arg(nodes.size() + 1));
+    }
     for (int aN = 0; aN < nodes.size(); aN++) {
         bool flError = true;
         foreach (auto node, nodes) {
