@@ -23,12 +23,7 @@ Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     source->addEdge(this);
     if(source != dest)
         dest->addEdge(this);
-
-    bezier.setX((source->pos().x()+dest->pos().x())/2);
-    bezier.setY((source->pos().y()+dest->pos().y())/2);
-
     adjust();
-
 }
 
 Edge::~Edge()
@@ -64,8 +59,6 @@ void Edge::adjust()
     if (!source || !dest)
         return;
 
-
-
     if(source != dest) {
         bool offs = false;  // смещение с центра
         QLineF line(mapFromItem(source, 0, 0), mapFromItem(dest, 0, 0));
@@ -82,9 +75,6 @@ void Edge::adjust()
             }
         }
         prepareGeometryChange();
-        //sourcePoint=line.p1();
-        //destPoint=line.p2();
-
         if (!offs) {
             if (length > qreal(2 * Node::Radius)) {
                 QPointF edgeOffset((line.dx() * Node::Radius) / length, (line.dy() * Node::Radius) / length);
@@ -103,7 +93,6 @@ void Edge::adjust()
                 sourcePoint = destPoint = line.p1();
             }
         }
-
         // Нахождение точки для текста
         // for QFont("Times", 11)
         QLineF line1(sourcePoint, destPoint), line2;
@@ -152,15 +141,12 @@ void Edge::adjust()
         sourcePoint = mapFromItem(source, 0, -Node::Radius);
         destPoint = mapFromItem(source, Node::Radius, 0);
     }
-
-
 }
 
 // Для столкновений и выделения
 QPainterPath Edge::shape() const{
     QPainterPath path;
     if (source != dest) {
-        /*
         QLineF line = QLineF(sourcePoint.x(), sourcePoint.y(), destPoint.x(), destPoint.y());
         qreal radAngle = line.angle() * M_PI / 180;
         qreal selectionOffset = 4;
@@ -171,25 +157,6 @@ QPainterPath Edge::shape() const{
         path.lineTo(line.p1() - offset1);
         path.lineTo(line.p2() - offset1);
         path.lineTo(line.p2() + offset1);
-        */
-
-
-        path.moveTo(sourcePoint);
-        QPointF ep(destPoint.x(), destPoint.y());
-        path.cubicTo(bezier, bezier,ep);
-
-        /*
-        QPointF offset1 = QPointF(1, 1);
-        path.moveTo(sourcePoint+offset1);
-        path.quadTo(bezier+offset1,ep+offset1);
-        path.moveTo(sourcePoint-offset1);
-        path.quadTo(bezier-offset1,ep-offset1);
-        offset1 = QPointF(2, 2);
-        path.moveTo(sourcePoint+offset1);
-        path.quadTo(bezier+offset1,ep+offset1);
-        path.moveTo(sourcePoint-offset1);
-        path.quadTo(bezier-offset1,ep-offset1);
-        */
     } else {
         path.addEllipse(source->pos() + QPointF(Node::Radius, -Node::Radius),
                         Node::Radius + 2, Node::Radius + 2);
@@ -229,41 +196,18 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
             return;
 
         // Draw the line itself
-        //painter->drawLine(line);
-        /*
-        painter->drawArc(source->pos().x()-Node::Radius,
-                         source->pos().y()-Node::Radius,
-                         -(source->pos().x()-dest->pos().x())+Node::Radius,
-                         -(source->pos().y()-dest->pos().y())+Node::Radius,
-                         16 *0 , 16 *180);
-        */
-        QPainterPath path;
-        path.moveTo(sourcePoint.x(), sourcePoint.y());
-        QPointF ep(destPoint.x(), destPoint.y());
-        path.cubicTo(bezier,bezier,ep);
-        painter->drawPath(path);
+        painter->drawLine(line);
         // Draw the arrows
-        QLineF bLine(bezier,destPoint);
-        //angle = std::atan2(-line.dy(), line.dx());
-        angle = std::atan2(-bLine.dy(), bLine.dx());
-      //  angle = std::atan2(-path.dy(), line.dx());
+        angle = std::atan2(-line.dy(), line.dx());
 
-        /*
         destArrowP1 = destPoint + QPointF(sin(angle - M_PI / 1.8) * qMin(arrowSize, line.length()),
                                                   cos(angle - M_PI / 1.8) * qMin(arrowSize, line.length()));
         destArrowP2 = destPoint + QPointF(sin(angle - M_PI + M_PI / 1.8) * qMin(arrowSize, line.length()),
                                                   cos(angle - M_PI + M_PI / 1.8) * qMin(arrowSize, line.length()));
-
-                                                  */
-
-        destArrowP1 = destPoint + QPointF(sin(angle - M_PI / 1.8) * qMin(arrowSize, bLine.length()),
-                                                  cos(angle - M_PI / 1.8) * qMin(arrowSize, bLine.length()));
-        destArrowP2 = destPoint + QPointF(sin(angle - M_PI + M_PI / 1.8) * qMin(arrowSize, bLine.length()),
-                                                  cos(angle - M_PI + M_PI / 1.8) * qMin(arrowSize, bLine.length()));
         peak = line.p2();
     } else {
-        painter->drawArc(source->pos().x(),
-                         source->pos().y() - 2 * Node::Radius,
+        painter->drawArc(static_cast<int>(source->pos().x()),
+                         static_cast<int>(source->pos().y()) - 2 * Node::Radius,
                          2 * Node::Radius,
                          2 * Node::Radius,
                          16 * -70, 16 * 270);

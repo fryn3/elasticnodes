@@ -68,7 +68,7 @@ bool operator==(const Universal &u1, const Universal &u2)
 
 bool operator==(const Format &f1, const Format &f2)
 {
-    return f1.data == f2.data;
+    return f1.dataInt == f2.dataInt;
 }
 
 Format::Format(QStringList source)
@@ -86,12 +86,26 @@ Format::Format(QStringList source)
         _fail = true;
         return;
     }
-    data.resize(rows);
+    dataStr.resize(rows);
     for (int i = 0; i < rows; i++) {
-        data[i].resize(countA);
+        dataStr[i].resize(countA);
         for(int j = 0; j < countA; j++) {
-            data[i][j] = source[i * countA + j + FormatFile::COUNT_HEADER];
+            dataStr[i][j] = source[i * countA + j + FormatFile::COUNT_HEADER];
         }
+    }
+
+    foreach (auto lineStr, dataStr) {
+        QVector<QList<int> > lineInt;
+        foreach (auto str, lineStr) {
+            auto numStr = listNums(str);
+            QList<int>  cell;
+            foreach (auto n, numStr) {
+                cell.append(n.toInt());
+            }
+            // Сортировку делать в классах потомках
+            lineInt.append(cell);
+        }
+        dataInt.append(lineInt);
     }
 }
 
@@ -103,12 +117,12 @@ MiliTable::MiliTable(QStringList source) : Table(source)
 {
     if (_fail)
         return;
-    countX = data.size();
+    countX = dataStr.size();
     _check.resize(countA);
     for (int i = 0; i < countA; i++) {
         for (int j = 1; j < countX + 1; j++) {
             // "-/-", "a3/y1,y3", "a2/-"
-            QStringList numStr = data[j - 1][i].split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
+            QStringList numStr = listNums(dataStr[j - 1][i]);
             if (numStr.size() == 0) {
                 _check[i].insert(QString("x%1a").arg(j), 0);
                 _check[i].insert(QString("x%1y").arg(j), 0);
@@ -132,14 +146,14 @@ MuraTable::MuraTable(QStringList source) : Table(source)
 {
     if (_fail)
         return;
-    countX = data.size() - 1;
-    countA = data.at(0).size();
+    countX = dataStr.size() - 1;
+    countA = dataStr.at(0).size();
     _check.resize(countA);
     for (int i = 0; i < countA; i++) {
-        if (data[0][i] == "-") {
+        if (dataStr[0][i] == "-") {
             _check[i].insert("y", 0);
         } else {
-            QStringList yN = data[0][i].split(",");
+            QStringList yN = dataStr[0][i].split(",");
             for(int j = 0; j < yN.size(); j++) {
                 // "yN", где N это номер вых сигнала.
                 int N = yN[j].mid(1).toInt();
@@ -153,11 +167,11 @@ MuraTable::MuraTable(QStringList source) : Table(source)
         // Начиная со второй строки.
         for (int j = 1; j < countX + 1; j++) {
             // "x1" : [0]
-            if (data[j][i] == "-") {
+            if (dataStr[j][i] == "-") {
                 _check[i].insert(QString("x%1").arg(j), 0);
             } else {
                 // "a3" -> 3
-                int outSt = data[j][i].mid(1).toInt();
+                int outSt = dataStr[j][i].mid(1).toInt();
                 _check[i].insert(QString("x%1").arg(j), outSt);
             }
         }
@@ -168,35 +182,12 @@ MiliMatrix::MiliMatrix(QStringList source) : Matrix (source)
 {
     if (_fail)
         return;
-    for (auto i = 0; i < countA; i++) {
-        QVector<QPair<int, QList<int> > > line;
-        for (auto j = 0; j < countA; j++) {
-            QStringList numStr = data.at(i).at(j).split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
-            QList<int> y;
-            if (numStr.size() == 0) {
-                y.append(0);
-                line.append(qMakePair(0, y));
-            } else {
-                int xTemp = numStr.at(0).toInt();
-                if (xTemp > countX) {
-                    countX = xTemp;
-                }
-                if (numStr.size() == 1) {
-                    y.append(0);
-                    line.append(qMakePair(xTemp, y));
-                } else {
-                    for (auto k = 1; k < numStr.size(); k++) {
-                        int yTemp = numStr.at(k).toInt();
-                        y.append(yTemp);
-                        if (yTemp > countY) {
-                            countY = yTemp;
-                        }
-                    }
-                    line.append(qMakePair(xTemp, y));
-                }
-            }
+    // Сортировка
+    for (auto row = 0; row < dataInt.size(); row++) {
+        for (auto col = 0; col < dataInt.at(0).size(); col++) {
+            // Первое число не сортировать
+            qSort(dataInt[row][col].begin() + 1, dataInt[row][col].end());
         }
-        matrix.append(line);
     }
 }
 
@@ -204,39 +195,12 @@ MuraMatrix::MuraMatrix(QStringList source) : Matrix (source)
 {
     if (_fail)
         return;
-    for (auto i = 0; i < data.at(0).size(); i++) {
-        QList<int> t;
-        if (data[0][i] == "-") {
-            Y.append(t);
-        } else {
-            QStringList yN = data[0][i].split(",");
-            for(auto j = 0; j < yN.size(); j++) {
-                // "yN", где N это номер вых сигнала.
-                int N = yN[j].mid(1).toInt();
-                if (countY < N) {
-                    countY = N;
-                }
-                t.append(N);
-            }
-            qSort(t.begin(), t.end());
-            Y.append(t);
+    // Сортировка
+    for (auto row = 0; row < dataInt.size(); row++) {
+        for (auto col = 0; col < dataInt.at(0).size(); col++) {
+            // Первое число не сортировать
+            qSort(dataInt[row][col].begin(), dataInt[row][col].end());
         }
-    }
-    for (auto i = 1; i < data.size(); i++) {
-        QVector<int> line;
-        for (auto j = 0; j < data.at(0).size(); j++) {
-            if (data.at(i).at(j) == "-") {
-                line.append(0);
-            } else {
-                // "x3 -> 3
-                int x = data.at(i).at(j).mid(1).toInt();
-                line.append(x);
-                if (x > countX) {
-                    countX = x;
-                }
-            }
-        }
-        matrixC.append(line);
     }
 }
 

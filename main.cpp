@@ -10,7 +10,8 @@
 
 const QString MILI = "/MiliMatrix.txt";
 const QString MURA = "/MuraMatrix.txt";
-const QString SELECTED_FILE = MURA;
+const QString FOR_PROGRAMM = "/graph.txt";
+const QString SELECTED_FILE = FOR_PROGRAMM;
 
 int main(int argc, char **argv)
 {
@@ -18,8 +19,7 @@ int main(int argc, char **argv)
 
     Win *widget = new Win;
 
-//    QFile in(QCoreApplication::applicationDirPath() + "/graph.txt");
-    QFile in(QCoreApplication::applicationDirPath() + MURA);
+    QFile in(QCoreApplication::applicationDirPath() + SELECTED_FILE);
     if (!in.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         qDebug() << QString("Запуск без файла %1.").arg(SELECTED_FILE);

@@ -9,7 +9,7 @@
 #include <QDebug>
 
 const QPen Node::_pen = QPen(Qt::black, 2);
-uint Node::_idStatic = 0;
+int Node::_idStatic = 0;
 
 Node::Node(GraphWidget *graphWidget, QString text)
     : NodeEdgeParent(graphWidget), id(_idStatic++)//, graph(graphWidget)
@@ -92,7 +92,7 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
     return QGraphicsItem::itemChange(change, value);
 }
 
-uint Node::idStatic()
+int Node::idStatic()
 {
     return _idStatic;
 }

@@ -69,7 +69,7 @@ public slots:
     //Загрузить автомат
     //    void loadAuto(int type,QStringList ylist,QStringList xlist,int size);
     void checkedTable();
-    void checkedMatrix();
+    void checkedMatrixStr();
 };
 
 #endif // WIN_H

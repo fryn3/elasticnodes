@@ -2,6 +2,7 @@
 #include <QDebug>
 DlgInput::DlgInput(QWidget *parent) : QDialog(parent)
 {
+    setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
     QGridLayout *layout = new QGridLayout(this);
     lTipInput = new QLabel("Подсказки тут",this);
     lTipInput->setFont(QFont("Times", 13));

@@ -119,11 +119,11 @@ void Win::onBtnCreateNodeClicked()
 
 
     int x, y;           // расположение вершины на сцене
-    uint numNode;
+    int numNode;
     bool flFinding;     // флаг нахождения, при решение с каким состоянием создавать вершину
     Node *node;
     if (automat) {
-        for (int i = 0; i < automat->f->countA; i++) {
+        for (auto i = 0; i < automat->f->countA; i++) {
             flFinding = false;
             for (int j = 0; j < nodes.size(); j++) {
                 QString s = nodes[j]->textContent().section(QRegExp("[^0-9]+"), 0, 0, QString::SectionSkipEmpty);
@@ -256,7 +256,7 @@ void Win::onBtnCheckClicked()
     if (automat->f->format() == Automata::Table::Format) {
         checkedTable();
     } else if (automat->f->format() == Automata::Matrix::Format) {
-        checkedMatrix();
+        checkedMatrixStr();
     }
 }
 
@@ -275,8 +275,7 @@ void Win::checkedTable()
         // Проверка на очередность вершин
         for (int i = 0; i < nodes.size(); i++) {
             for (int j = 0; j < nodes.size(); j++) {
-                if (nodes.at(j)->textContent()
-                        .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
+                if (listNums(nodes.at(j)->textContent())
                         .at(0).toInt() == i) {
                     break;
                 } else if (j == nodes.size() - 1) {
@@ -286,8 +285,7 @@ void Win::checkedTable()
         }
         for (int i = 0; i < nodes.size(); i++) {
             // "a2/y1,y3" or "a1/-"
-            QStringList nums = nodes.at(i)->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
+            QStringList nums = listNums(nodes.at(i)->textContent());
             if (nums.at(0).toInt() >= automat->f->countA) {
                 flFail = 2;
                 break;
@@ -305,13 +303,12 @@ void Win::checkedTable()
             if (flFail) {
                 break;
             }
-            int sourceNum = edges.at(i)->sourceNode()->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
-            int destNum = edges.at(i)->destNode()->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
+            int sourceNum = listNums(edges.at(i)->sourceNode()->textContent())
+                    .at(0).toInt();
+            int destNum = listNums(edges.at(i)->destNode()->textContent())
+                    .at(0).toInt();
             // "x1" or "x2,x4"
-            QStringList nums = edges.at(i)->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
+            QStringList nums = listNums(edges.at(i)->textContent());
             for (int j = 0; j < nums.size(); j++) {
                 ch[(sourceNum)].insert(QString("x%1").arg(nums.at(j)), destNum);
             }
@@ -349,13 +346,10 @@ void Win::checkedTable()
             if (flFail) {
                 break;
             }
-            int sourceNum = edges.at(i)->sourceNode()->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
-            int destNum = edges.at(i)->destNode()->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts).at(0).toInt();
+            int sourceNum = listNums(edges.at(i)->sourceNode()->textContent()).at(0).toInt();
+            int destNum = listNums(edges.at(i)->destNode()->textContent()).at(0).toInt();
             // "x1/y1,y2" or "x2/-"
-            QStringList nums = edges.at(i)->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts);
+            QStringList nums = listNums(edges.at(i)->textContent());
             if (nums.at(0).toInt() > automat->f->countX) {
                 flFail = 2;
                 break;
@@ -410,7 +404,7 @@ void Win::checkedTable()
     }
 }
 
-void Win::checkedMatrix()
+void Win::checkedMatrixStr()
 {
     QStringList result;
     result.append(QString("%1").arg(automat->t->type()));
@@ -420,42 +414,43 @@ void Win::checkedMatrix()
         result.append(QString("%1").arg(nodes.size()));
     } else if (automat->t->type() == Automata::Mura::Type) {
         result.append(QString("%1").arg(nodes.size() + 1));
-    }
-    for (int aN = 0; aN < nodes.size(); aN++) {
-        bool flError = true;
-        foreach (auto node, nodes) {
-            if (node->textContent()
-                    .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
-                    .at(0).toInt() == aN) {
-                result.append(node->textContent().split("/").at(1));
-                flError = false;
-                break;
+        for (int aN = 0; aN < nodes.size(); aN++) {
+            bool flError = true;
+            foreach (auto node, nodes) {
+                if (listNums(node->textContent())
+                        .at(0).toInt() == aN) {
+                    result.append(node->textContent().split("/").at(1));
+                    flError = false;
+                    break;
+                }
             }
-        }
-        if (flError) {
-            qDebug() << "Вершины идут не по порядку: а0, а1, а4, а5";
-            QMessageBox msgBox;
-            msgBox.setText("Error.");
-            msgBox.exec();
-            return;
+            if (flError) {
+                qDebug() << "Вершины идут не по порядку: а0, а1, а4, а5";
+                QMessageBox msgBox;
+                msgBox.setText("Error.");
+                msgBox.exec();
+                return;
+            }
         }
     }
     for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
         for (auto destN = 0; destN < nodes.size(); destN++) {
             bool findEdge = false;
             foreach (auto edge, edges) {
-                if ((edge->sourceNode()->textContent()
-                        .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
+                if ((listNums(edge->sourceNode()->textContent())
                         .at(0).toInt() == sourceN)
-                        && (edge->destNode()->textContent()
-                            .split(QRegExp("[^0-9]"), QString::SkipEmptyParts)
+                        && (listNums(edge->destNode()->textContent())
                             .at(0).toInt() == destN)) {
                     result.append(edge->textContent());
                     findEdge = true;
                 }
             }
             if (!findEdge) {
-                result.append("-");
+                if (automat->t->type() == Automata::Mili::Type) {
+                    result.append("-/-");
+                } else if (automat->t->type() == Automata::Mura::Type) {
+                    result.append("-");
+                }
             }
         }
     }
@@ -506,7 +501,6 @@ void Win::sceneSelectionChanged()
                     btnConnectNode->setChecked(false);
 
 
-                    //this->dr
                 }
                 connFlag = 0;
                 _source = nullptr;
@@ -521,7 +515,7 @@ void Win::sceneSelectionChanged()
             _source = nullptr;
 
             Edge *e = qgraphicsitem_cast<Edge *>(l.at(0));
-            grafViewScene->startBezier(e);//
+            grafViewScene->startBezier(e);
 
         }
         btnDelete->setEnabled(true);
@@ -550,4 +544,3 @@ void Win::dropEvent(QDropEvent */*event*/){
     qDebug()<<"Dropped";
 }
 
-//void Win::loadAuto(int type,QStringList ylist,QStringList xlist,int size){}

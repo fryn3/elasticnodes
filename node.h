@@ -17,7 +17,7 @@ public:
     static const QPen _pen;
     Node(GraphWidget *graphWidget, QString textInNode = "");
     virtual ~Node() override;
-    const uint id;
+    const int id;
     void setTextContent(QString text) override;
     QString textContent() const override;
     void addEdge(Edge *edge);
@@ -29,7 +29,7 @@ public:
     QPainterPath shape() const override;
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    static uint idStatic();
+    static int idStatic();
     void removeEdge(Edge *edge);
 protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
@@ -38,7 +38,7 @@ protected:
 private:
     QList<Edge *> edgeList;
     QPointF newPos;
-    static uint _idStatic;
+    static int _idStatic;
 };
 
 #endif // NODE_H

@@ -139,13 +139,13 @@ void GraphWidget::startBezier(Edge *e){
 }
 
 void GraphWidget::mouseReleaseEvent(QMouseEvent *event){
-    if (bezierEdge!=NULL){
+    if (bezierEdge!=nullptr){
         bezierEdge->bezier.setX(event->x());
         bezierEdge->bezier.setY(event->y());
         qDebug()<<"graph release"<<event->x()<<" "<<event->y()<<" "<<event->globalX()<<" "<<event->globalY();
 
         bezierEdge->adjust();
-        bezierEdge=NULL;
+        bezierEdge=nullptr;
     }
     QGraphicsView::mouseReleaseEvent(event);
 

@@ -4,15 +4,17 @@
 #include <QVector>
 #include <QList>
 #include <QMultiMap>
+
+
+inline QStringList listNums(QString str) { return str.split(QRegExp("[^0-9]"), QString::SkipEmptyParts); }
+
 namespace Automata {
 
 namespace FormatFile {
 enum {
-//    FULL_NAME_EXE,
-//    NAME_FILE,  // номер варианта
-    TYPE,      // mili/mura
-    FORMAT,    // table/matrix
-    COLUMNS,     // кол-во состояний
+    TYPE,       // mili/mura
+    FORMAT,     // table/matrix
+    COLUMNS,    // кол-во состояний
     ROWS,
     COUNT_HEADER
 };
@@ -87,7 +89,8 @@ public:
 protected:
     Format(const QStringList source);
     bool _fail;
-    QVector<QVector<QString> > data;
+    QVector<QVector<QString> > dataStr;
+    QVector<QVector<QList<int> > > dataInt;
 };
 
 class Table : public Format
@@ -126,17 +129,12 @@ class MiliMatrix : public Mili, public Matrix
 {
 public:
     MiliMatrix(const QStringList source);
-protected:
-    QVector<QVector<QPair<int, QList<int> > > > matrix;
 };
 
 class MuraMatrix : public Mura, public Matrix
 {
 public:
     MuraMatrix(const QStringList source);
-protected:
-    QVector<QVector<int> > matrixC;
-    QVector<QList<int> > Y;
 };
 
 }

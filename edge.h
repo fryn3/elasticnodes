@@ -11,7 +11,7 @@ class Edge : public NodeEdgeParent
 {
 public:
     Edge(Node *sourceNode, Node *destNode, QString textArrow = "");
-    virtual ~Edge();
+    virtual ~Edge() override;
     void setTextContent(QString text) override;
     QString textContent() const override;
     const uint id;
