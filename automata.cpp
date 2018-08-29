@@ -73,7 +73,7 @@ bool operator==(const Format &f1, const Format &f2)
 
 Format::Format(QStringList source)
     : countA(0), countX(0), countY(0), _fail(false)
-{
+{   // countX, countY устанавлиавть в потомках
     if (source.size() < FormatFile::COUNT_HEADER) {
         qDebug() << "Table : source.size() < COUNT_HEADER";
         _fail = true;
@@ -117,7 +117,19 @@ MiliTable::MiliTable(QStringList source) : Table(source)
 {
     if (_fail)
         return;
-    countX = dataStr.size();
+    countX = dataInt.size();
+    // Сортировка, countY
+    for (auto row = 0; row < dataInt.size(); row++) {
+        for (auto col = 0; col < dataInt.at(0).size(); col++) {
+            // Первое число не сортировать
+            qSort(dataInt[row][col].begin() + 1, dataInt[row][col].end());
+            for (auto pY = dataInt[row][col].begin() + 1; pY != dataInt[row][col].end(); pY++) {
+                if (*pY > countY) {
+                    countY = *pY;
+                }
+            }
+        }
+    }
     _check.resize(countA);
     for (int i = 0; i < countA; i++) {
         for (int j = 1; j < countX + 1; j++) {
@@ -146,8 +158,18 @@ MuraTable::MuraTable(QStringList source) : Table(source)
 {
     if (_fail)
         return;
-    countX = dataStr.size() - 1;
-    countA = dataStr.at(0).size();
+    countX = dataInt.size() - 1;
+    // Сортировка первой строки, countY
+    for (auto col = 0; col < dataInt.at(0).size(); col++) {
+        qSort(dataInt[0][col].begin(), dataInt[0][col].end());
+        foreach (auto y, dataInt.at(0).at(col)) {
+            if (y > countY) {
+                countY = y;
+            }
+        }
+
+    }
+
     _check.resize(countA);
     for (int i = 0; i < countA; i++) {
         if (dataStr[0][i] == "-") {
@@ -189,6 +211,23 @@ MiliMatrix::MiliMatrix(QStringList source) : Matrix (source)
             qSort(dataInt[row][col].begin() + 1, dataInt[row][col].end());
         }
     }
+    // countX, countY
+    for (auto row = dataInt.begin(); row != dataInt.end(); row++) { // х2/-; -/-; -/-; -/-; х1/у4; -/-; х1/у1,у5;
+        for (auto cell = row->begin(); cell != row->end(); cell++) {
+            if (cell->size() == 1) {
+                auto x = cell->at(0);
+                if (x > countX) {
+                    countX = x;
+                }
+            } else if (cell->size() > 1) {
+                for (auto pY = cell->begin() + 1; pY != cell->end(); pY++) {
+                    if (*pY > countY) {
+                        countY = *pY;
+                    }
+                }
+            }
+        }
+    }
 }
 
 MuraMatrix::MuraMatrix(QStringList source) : Matrix (source)
@@ -198,8 +237,25 @@ MuraMatrix::MuraMatrix(QStringList source) : Matrix (source)
     // Сортировка
     for (auto row = 0; row < dataInt.size(); row++) {
         for (auto col = 0; col < dataInt.at(0).size(); col++) {
-            // Первое число не сортировать
             qSort(dataInt[row][col].begin(), dataInt[row][col].end());
+        }
+    }
+    // countY
+    foreach (auto cellY, dataInt.at(0)) {   // y1,y5; y2; -; y3,y1;
+        foreach (auto y, cellY) {
+            if (y > countY) {
+                countY = y;
+            }
+        }
+    }
+    // countX
+    for (auto row = dataInt.begin() + 1; row != dataInt.end(); row++) { // x2; -; -; x3; -
+        for (auto cellX = row->begin(); cellX != row->end(); cellX++) {
+            foreach (auto x , *cellX) {
+                if (x > countX) {
+                    countX = x;
+                }
+            }
         }
     }
 }
