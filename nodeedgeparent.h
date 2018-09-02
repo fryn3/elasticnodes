@@ -5,6 +5,8 @@
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 
+#define DEBUG
+
 class GraphWidget;
 
 // абстрактный класс
@@ -17,6 +19,8 @@ public:
     virtual QString textContent() const = 0;
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     GraphWidget *graph;
+protected:
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 };
 
 

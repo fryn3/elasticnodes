@@ -1,6 +1,6 @@
 #include "edge.h"
 #include "node.h"
-
+#include <QString>
 #include <qmath.h>
 #include <QPainter>
 #include <QPainterPath>
@@ -15,14 +15,28 @@ int Edge::_offsAngle = 5;
 
 Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     : NodeEdgeParent(sourceNode->graph),
-      id(_idStatic++), textEdge(textArrow), arrowSize(15)
+      id(_idStatic++), textEdge(textArrow), arrowSize(15), pointZero(), flItemPositionChange(false)
 {
-    setFlag(QGraphicsItem::ItemIsSelectable);
+    setFlag(ItemIsSelectable);
+    setFlag(ItemIsMovable);
+    setFlag(ItemSendsGeometryChanges);
     source = sourceNode;
     dest = destNode;
     source->addEdge(this);
     if(source != dest)
         dest->addEdge(this);
+    beforeLine.setPoints(source->scenePos(), dest->scenePos());
+    QLineF line1(source->scenePos(), dest->scenePos());
+    distSourDest = line1.length();                      // distSourDest
+    line1.setLength(line1.length() / 2);
+    QLineF line2(line1.p2(), line1.p1());
+    QLineF line3 = line2.normalVector();
+    line3.setLength(30);
+    bezier.setX(line3.p2().x());
+    bezier.setY(line3.p2().y());                        // bezier
+    QLineF line4(source->scenePos(), bezier);
+    distBezier = line4.length();                        // distBezier
+    angleBezier = beforeLine.angle() - line4.angle();//line1.angleTo(line4);                 // angleBezier
     adjust();
 }
 
@@ -141,6 +155,7 @@ void Edge::adjust()
         sourcePoint = mapFromItem(source, 0, -Node::Radius);
         destPoint = mapFromItem(source, Node::Radius, 0);
     }
+    bezierPosFinded();
 }
 
 // Для столкновений и выделения
@@ -152,11 +167,18 @@ QPainterPath Edge::shape() const{
         qreal selectionOffset = 4;
         qreal dx = selectionOffset * sin(radAngle);
         qreal dy = selectionOffset * cos(radAngle);
-        QPointF offset1 = QPointF(dx, dy);
+        QPointF offset1(dx, dy);
         path.moveTo(line.p1() + offset1);
         path.lineTo(line.p1() - offset1);
         path.lineTo(line.p2() - offset1);
         path.lineTo(line.p2() + offset1);
+        path.lineTo(line.p1() + offset1);
+
+        path.moveTo(bezier + QPointF(-3, -3));
+        path.lineTo(bezier + QPointF(3, -3));
+        path.lineTo(bezier + QPointF(3, 3));
+        path.lineTo(bezier + QPointF(-3, 3));
+        path.lineTo(bezier + QPointF(-3, -3));
     } else {
         path.addEllipse(source->pos() + QPointF(Node::Radius, -Node::Radius),
                         Node::Radius + 2, Node::Radius + 2);
@@ -178,12 +200,17 @@ QRectF Edge::boundingRect() const
               << QPointF(x + 8 * textEdge.size(), y - 18)
               << QPointF(x + 8 * textEdge.size(), y + 2)
               << QPointF(x, y + 2);
-        return shape().boundingRect().united(pText.boundingRect());
+        QPolygonF pBezier;
+        pBezier << bezier + QPointF(-1, -1)
+                << bezier + QPointF(2, 0)
+                << bezier + QPointF(0, 2)
+                << bezier + QPointF(-2, 0);
+        return shape().boundingRect().united(pText.boundingRect()).united(pBezier.boundingRect());
     }
     return shape().boundingRect();
 }
 
-void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
+void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     if (!source || !dest)
         return;
@@ -224,4 +251,43 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
     painter->setFont(QFont("Times", 11));
     painter->drawText(textPoint, textEdge);
+    painter->drawEllipse(bezier, 2, 2);         // размер точки
+    NodeEdgeParent::paint(painter, option, widget);
+}
+
+void Edge::bezierPosFinded()
+{
+    if ( !flItemPositionChange) {
+        QLineF line1(source->pos(), dest->pos());
+        qreal k = line1.length() / beforeLine.length();
+        QLineF line2 = line1;
+        line2.setAngle(line1.angle() - angleBezier);
+        line2.setLength(k * distBezier);
+        bezier.setX(line2.p2().x());
+        bezier.setY(line2.p2().y());
+    }
+    flItemPositionChange = false;
+}
+
+QVariant Edge::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    switch (change) {
+    case ItemPositionHasChanged:
+    {
+        beforeLine.setPoints(source->scenePos(), dest->scenePos());
+        QLineF line1(source->pos(), dest->pos());
+        QLineF line4(source->pos(), mapToScene(bezier));
+        qDebug() << line4;
+        distBezier = line4.length();                        // distBezier
+        angleBezier = beforeLine.angle() - line4.angle();                 // angleBezier
+        distSourDest = line1.length();                      // distSourDest
+        flItemPositionChange = true;
+        adjust();
+     }
+        break;
+    default:
+        break;
+    };
+
+    return QGraphicsItem::itemChange(change, value);
 }
