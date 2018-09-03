@@ -38,12 +38,9 @@ private:
     QPointF bezier;         // для Кривой Безье
     qreal angleBezier;      // угол от Источника
     qreal distBezier;       // расстояние до Источника
-    qreal distSourDest;     // расстояние от Источника до Получателя
+    QLineF beforeLine;      // от Источника до Получателя
     QPointF textPoint;
     qreal arrowSize;
-    QPointF pointZero;
-    bool flItemPositionChange;
-    QLineF beforeLine;      // от Источника до Получателя
 };
 
 #endif // EDGE_H

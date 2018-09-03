@@ -15,7 +15,7 @@ int Edge::_offsAngle = 5;
 
 Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     : NodeEdgeParent(sourceNode->graph),
-      id(_idStatic++), textEdge(textArrow), arrowSize(15), pointZero(), flItemPositionChange(false)
+      id(_idStatic++), textEdge(textArrow), arrowSize(15)
 {
     setFlag(ItemIsSelectable);
     setFlag(ItemIsMovable);
@@ -25,16 +25,15 @@ Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     source->addEdge(this);
     if(source != dest)
         dest->addEdge(this);
-    beforeLine.setPoints(source->scenePos(), dest->scenePos());
-    QLineF line1(source->scenePos(), dest->scenePos());
-    distSourDest = line1.length();                      // distSourDest
+    beforeLine.setPoints(source->pos(), dest->pos());   // от Источника до Получателя
+    QLineF line1(source->pos(), dest->pos());
     line1.setLength(line1.length() / 2);
     QLineF line2(line1.p2(), line1.p1());
     QLineF line3 = line2.normalVector();
     line3.setLength(30);
     bezier.setX(line3.p2().x());
     bezier.setY(line3.p2().y());                        // bezier
-    QLineF line4(source->scenePos(), bezier);
+    QLineF line4(source->pos(), bezier);
     distBezier = line4.length();                        // distBezier
     angleBezier = beforeLine.angle() - line4.angle();//line1.angleTo(line4);                 // angleBezier
     adjust();
@@ -261,7 +260,6 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
 void Edge::bezierPosFinded()
 {
-    if ( !flItemPositionChange) {
         QLineF line1(mapFromScene(source->pos()), mapFromScene(dest->pos()));
         qreal k = line1.length() / beforeLine.length();
         QLineF line2 = line1;
@@ -269,8 +267,6 @@ void Edge::bezierPosFinded()
         line2.setLength(k * distBezier);
         bezier.setX(line2.p2().x());
         bezier.setY(line2.p2().y());
-    }
-    flItemPositionChange = false;
 }
 
 QVariant Edge::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -278,14 +274,10 @@ QVariant Edge::itemChange(GraphicsItemChange change, const QVariant &value)
     switch (change) {
     case ItemPositionHasChanged:
     {
-        beforeLine.setPoints(source->scenePos(), dest->scenePos());
-        QLineF line1(source->pos(), dest->pos());
+        beforeLine.setPoints(source->pos(), dest->pos());
         QLineF line4(source->pos(), mapToScene(bezier));
-        qDebug() << line4;
         distBezier = line4.length();                        // distBezier
         angleBezier = beforeLine.angle() - line4.angle();                 // angleBezier
-        distSourDest = line1.length();                      // distSourDest
-        flItemPositionChange = true;
         adjust();
      }
         break;
