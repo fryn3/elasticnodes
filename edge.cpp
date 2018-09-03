@@ -258,7 +258,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 void Edge::bezierPosFinded()
 {
     if ( !flItemPositionChange) {
-        QLineF line1(source->pos(), dest->pos());
+        QLineF line1(mapFromScene(source->pos()), mapFromScene(dest->pos()));
         qreal k = line1.length() / beforeLine.length();
         QLineF line2 = line1;
         line2.setAngle(line1.angle() - angleBezier);
