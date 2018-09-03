@@ -218,6 +218,10 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QPointF peak, destArrowP1, destArrowP2;
     painter->setPen(QPen((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     if (source != dest) {
+        QPainterPath myPath;
+        myPath.moveTo(mapFromScene(source->pos()));
+        myPath.cubicTo(bezier, bezier, mapFromScene(dest->pos()));
+        painter->drawPath(myPath);
         QLineF line(sourcePoint, destPoint);
         if (qFuzzyCompare(line.length(), qreal(0.)))
             return;
