@@ -29,6 +29,8 @@ protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     void bezierPosFinded();
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    QPainterPath pathBezierCurve() const;
+    QPainterPath pathBezierPoint() const;
 private:
     static uint _idStatic;
     static int _offsAngle;
@@ -41,6 +43,7 @@ private:
     QLineF beforeLine;      // от Источника до Получателя
     QPointF textPoint;
     qreal arrowSize;
+    bool flSelected;
 };
 
 #endif // EDGE_H

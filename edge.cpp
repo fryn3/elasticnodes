@@ -15,16 +15,18 @@ int Edge::_offsAngle = 5;
 
 Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     : NodeEdgeParent(sourceNode->graph),
-      id(_idStatic++), textEdge(textArrow), arrowSize(15)
+      id(_idStatic++), textEdge(textArrow),
+      arrowSize(15), flSelected(false)
 {
     setFlag(ItemIsSelectable);
-    setFlag(ItemIsMovable);
-    setFlag(ItemSendsGeometryChanges);
     source = sourceNode;
     dest = destNode;
     source->addEdge(this);
-    if(source != dest)
+    if (source != dest) {
         dest->addEdge(this);
+        setFlag(ItemIsMovable);
+        setFlag(ItemSendsGeometryChanges);
+    }
     beforeLine.setPoints(source->pos(), dest->pos());   // от Источника до Получателя
     QLineF line1(source->pos(), dest->pos());
     line1.setLength(line1.length() / 2);
@@ -35,7 +37,7 @@ Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     bezier.setY(line3.p2().y());                        // bezier
     QLineF line4(source->pos(), bezier);
     distBezier = line4.length();                        // distBezier
-    angleBezier = beforeLine.angle() - line4.angle();//line1.angleTo(line4);                 // angleBezier
+    angleBezier = beforeLine.angle() - line4.angle();   // angleBezier
     adjust();
 }
 
@@ -73,46 +75,20 @@ void Edge::adjust()
         return;
 
     if(source != dest) {
-        bool offs = false;  // смещение с центра
-        {
-            QLineF line(mapFromItem(source, 0, 0), mapFromItem(dest, 0, 0));
-            qreal length = line.length();
-            qreal angl = line.angle();
-            for (auto edg : source->edges()) {
-                if (edg->sourceNode() == dest) {
-                    offs = true;
-                    if(id > edg->id) {
-                        edg->adjust();
-                    }
-                    break;
+        for (auto edg : source->edges()) {
+            if (edg->sourceNode() == dest) {
+                if(id > edg->id) {
+                    edg->adjust();
                 }
-            }
-            prepareGeometryChange();
-            if (!offs) {
-                if (length > qreal(2 * Node::Radius)) {
-                    QPointF edgeOffset((line.dx() * Node::Radius) / length, (line.dy() * Node::Radius) / length);
-                    sourcePoint = line.p1() + edgeOffset;
-                    destPoint = line.p2() - edgeOffset;
-                } else {
-                    sourcePoint = destPoint = line.p1();
-                }
-            } else {    // offs
-                if (length > qreal(2 * Node::Radius)) {
-                    sourcePoint.setX(line.p1().x() + Node::Radius * cos((angl + _offsAngle) * PI / 180));
-                    sourcePoint.setY(line.p1().y() - Node::Radius * sin((angl + _offsAngle) * PI / 180));
-                    destPoint.setX(line.p2().x() + Node::Radius * cos((angl - 180 - _offsAngle) * PI / 180));
-                    destPoint.setY(line.p2().y() - Node::Radius * sin((angl - 180 - _offsAngle) * PI / 180));
-                } else {
-                    sourcePoint = destPoint = line.p1();
-                }
+                break;
             }
         }
+        prepareGeometryChange();
         // Нахождение точки для текста
         // for QFont("Times", 11)
         QLineF line1(bezier, mapFromScene(dest->pos())), line2;
         line1.setLength(line1.length() - Node::Radius);
         qreal anglRad = line1.angle() * PI / 180;
-        qDebug() << "line1(bezier, destPoint) = " << line1.angle();
         qreal widthText, hightText;
         widthText = 8 * textEdge.size();
         hightText = 14;
@@ -171,41 +147,45 @@ void Edge::adjust()
     bezierPosFinded();
 }
 
+QPainterPath Edge::pathBezierCurve() const {
+    QPainterPath path;
+    qreal qOffset = 5;
+    QLineF line0(mapFromScene(source->pos()), bezier);
+    QLineF line1(bezier, mapFromScene(dest->pos()));
+    qreal dx0 = qOffset * sin(line0.angle() * M_PI / 180);
+    qreal dy0 = qOffset * cos(line0.angle() * M_PI / 180);
+    qreal dx1 = qOffset * sin(line1.angle() * M_PI / 180);
+    qreal dy1 = qOffset * cos(line1.angle() * M_PI / 180);
+    QPointF offset0(dx0, dy0);
+    QPointF offset1(dx1, dy1);
+    path.moveTo(mapFromScene(source->pos() + offset0));
+    path.cubicTo(bezier + (offset0 + offset1) / 2, bezier + (offset0 + offset1) / 2, mapFromScene(dest->pos()) + offset1);
+    path.lineTo(mapFromScene(dest->pos()) - offset1);
+    path.cubicTo(bezier - (offset0 + offset1) / 2, bezier - (offset0 + offset1) / 2, mapFromScene(source->pos()) - offset0);
+    path.lineTo(mapFromScene(source->pos()) + offset0);
+    return path;
+}
+
+#define SIZE_POINT      (5)
+QPainterPath Edge::pathBezierPoint() const {
+    QPainterPath path;
+    path.moveTo(bezier + QPointF(-SIZE_POINT, -SIZE_POINT));
+    path.lineTo(bezier + QPointF(SIZE_POINT, -SIZE_POINT));
+    path.lineTo(bezier + QPointF(SIZE_POINT, SIZE_POINT));
+    path.lineTo(bezier + QPointF(-SIZE_POINT, SIZE_POINT));
+    path.lineTo(bezier + QPointF(-SIZE_POINT, -SIZE_POINT));
+    return path;
+}
+
 // Для столкновений и выделения
-QPainterPath Edge::shape() const{
+QPainterPath Edge::shape() const {
     QPainterPath path;
     if (source != dest) {
-        QLineF line = QLineF(sourcePoint.x(), sourcePoint.y(), destPoint.x(), destPoint.y());
-        qreal radAngle = line.angle() * M_PI / 180;
-        qreal qOffset = 5;
-        qreal dx = qOffset * sin(radAngle);
-        qreal dy = qOffset * cos(radAngle);
-        QPointF offset(dx, dy);
-        path.moveTo(line.p1() + offset);
-        path.lineTo(line.p1() - offset);
-        path.lineTo(line.p2() - offset);
-        path.lineTo(line.p2() + offset);
-        path.lineTo(line.p1() + offset);
-
-        QLineF line0(mapFromScene(source->pos()), bezier);
-        QLineF line1(bezier, mapFromScene(dest->pos()));
-        qreal dx0 = qOffset * sin(line0.angle() * M_PI / 180);
-        qreal dy0 = qOffset * cos(line0.angle() * M_PI / 180);
-        qreal dx1 = qOffset * sin(line1.angle() * M_PI / 180);
-        qreal dy1 = qOffset * cos(line1.angle() * M_PI / 180);
-        QPointF offset0(dx0, dy0);
-        QPointF offset1(dx1, dy1);
-        path.moveTo(mapFromScene(source->pos() + offset0));
-        path.cubicTo(bezier + (offset0 + offset1) / 2, bezier + (offset0 + offset1) / 2, mapFromScene(dest->pos()) + offset1);
-        path.lineTo(mapFromScene(dest->pos()) - offset1);
-        path.cubicTo(bezier - (offset0 + offset1) / 2, bezier - (offset0 + offset1) / 2, mapFromScene(source->pos()) - offset0);
-        path.lineTo(mapFromScene(source->pos()) + offset0);
-
-        path.moveTo(bezier + QPointF(-3, -3));
-        path.lineTo(bezier + QPointF(3, -3));
-        path.lineTo(bezier + QPointF(3, 3));
-        path.lineTo(bezier + QPointF(-3, 3));
-        path.lineTo(bezier + QPointF(-3, -3));
+        if (!flSelected) {
+            path = pathBezierCurve();
+        } else {
+            path = pathBezierPoint();
+        }
     } else {
         path.addEllipse(source->pos() + QPointF(Node::Radius, -Node::Radius),
                         Node::Radius + 2, Node::Radius + 2);
@@ -232,7 +212,9 @@ QRectF Edge::boundingRect() const
                 << bezier + QPointF(2, 0)
                 << bezier + QPointF(0, 2)
                 << bezier + QPointF(-2, 0);
-        return shape().boundingRect().united(pText.boundingRect()).united(pBezier.boundingRect());
+        return pathBezierCurve().boundingRect()
+                .united(pText.boundingRect())
+                .united(pathBezierPoint().boundingRect());
     }
     return shape().boundingRect();
 }
@@ -255,8 +237,6 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         if (qFuzzyCompare(line.length(), qreal(0.)))
             return;
 
-        // Draw the line itself
-//        painter->drawLine(line);
         // Draw the arrows
         angle = std::atan2(-line.dy(), line.dx());
 
@@ -271,7 +251,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
                          2 * Node::Radius,
                          2 * Node::Radius,
                          16 * -70, 16 * 270);
-        angle = 1.07*M_PI;
+        angle = 1.07 * M_PI;
         destArrowP1 = destPoint + QPointF(sin(angle - M_PI / 1.8) * arrowSize,
                                                  cos(angle - M_PI / 1.8) * arrowSize);
         destArrowP2 = destPoint + QPointF(sin(angle - M_PI + M_PI / 1.8)* arrowSize,
@@ -284,7 +264,9 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
     painter->setFont(QFont("Times", 11));
     painter->drawText(textPoint, textEdge);
-    painter->drawEllipse(bezier, 2, 2);         // размер точки
+    if (flSelected) {
+        painter->drawEllipse(bezier, SIZE_POINT - 1, SIZE_POINT - 1);         // размер точки
+    }
     NodeEdgeParent::paint(painter, option, widget);
 }
 
@@ -310,6 +292,9 @@ QVariant Edge::itemChange(GraphicsItemChange change, const QVariant &value)
         angleBezier = beforeLine.angle() - line4.angle();                 // angleBezier
         adjust();
      }
+        break;
+    case ItemSelectedChange:
+        flSelected = value.toBool();
         break;
     default:
         break;
