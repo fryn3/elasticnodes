@@ -137,7 +137,6 @@ void Edge::adjust()
             line3.setLength(5.0);
             textPoint = line3.p2();
         }
-        qDebug() << textPoint;
     } else {        // source == dest
         textPoint = QPointF(boundingRect().center().x() - Node::Radius / 2, boundingRect().center().y());
         prepareGeometryChange();
