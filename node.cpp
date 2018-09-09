@@ -19,6 +19,9 @@ Node::Node(GraphWidget *graphWidget, QString text)
     setFlag(ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
     setZValue(10);
+#ifdef DEBUG
+    setZValue(-10);
+#endif
     graph->scene()->addItem(this);    // сразу добавляет на сцену
     if (text.isEmpty()) {
         textInNode = QString("%1").arg(id);
@@ -71,12 +74,12 @@ QRectF Node::boundingRect() const
 
 void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+    NodeEdgeParent::paint(painter, option, widget);
     painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::white));
     painter->setPen(_pen);
     painter->drawEllipse(-Radius, -Radius, 2 * Radius, 2 * Radius);
     painter->setFont(QFont("Times", 12, QFont::Bold));
     painter->drawText(boundingRect(), Qt::AlignCenter, textInNode);
-    NodeEdgeParent::paint(painter, option, widget);
 }
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)

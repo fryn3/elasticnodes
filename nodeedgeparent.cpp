@@ -22,12 +22,12 @@ void NodeEdgeParent::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void NodeEdgeParent::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
 #ifdef DEBUG
-    QPen pen2(Qt::yellow, 1, Qt::DotLine);
+    QPen pen2(Qt::yellow, 0, Qt::DotLine);
     painter->setOpacity(0.4);
     painter->setPen(pen2);
     painter->drawRect(boundingRect());
     painter->setOpacity(1);
-    QPen pen(Qt::red, 1, Qt::SolidLine);
+    QPen pen(Qt::red, 0, Qt::SolidLine);
     painter->strokePath(shape(), pen);
 #endif
 }
