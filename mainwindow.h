@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-
+#include <formgraph.h>
 namespace Ui {
 class MainWindow;
 }
@@ -14,7 +14,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
+    FormGraph *formGraph;
 private:
     Ui::MainWindow *ui;
 };

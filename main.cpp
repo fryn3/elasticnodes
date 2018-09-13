@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QList>
 #include <QDebug>
+#include "mainwindow.h"
 #include "formgraph.h"
 
 const QString MILI = "/MiliMatrix.txt";
@@ -16,8 +17,7 @@ const QString SELECTED_FILE = FOR_PROGRAMM;
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-
-    FormGraph *widget = new FormGraph;
+    MainWindow *m = new MainWindow;
 
     QFile in(QCoreApplication::applicationDirPath() + SELECTED_FILE);
     if (!in.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -51,11 +51,10 @@ int main(int argc, char **argv)
         qDebug() << "main : Automata::FormatFile::TYPE error";
         return 102;
     }
-    if (!widget->CreateAutomat(source)) {
+    if (!m->formGraph->CreateAutomat(source)) {
         qDebug() << "main : !widget->CreateAutomat(source))";
         return 103;
     }
-    widget->setWindowTitle("GE");
-    widget->show();
+    m->show();
     return app.exec();
 }
