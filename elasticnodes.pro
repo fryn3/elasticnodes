@@ -4,18 +4,24 @@ HEADERS += \
         edge.h \
         node.h \
         graphwidget.h \
-    win.h \
     automata.h \
     nodeedgeparent.h \
-    dlginput.h
+    dlginput.h \
+    formgraph.h \
+    mainwindow.h
 
 SOURCES += \
         edge.cpp \
         main.cpp \
         node.cpp \
         graphwidget.cpp \
-    win.cpp \
     automata.cpp \
     dlginput.cpp \
-    nodeedgeparent.cpp
+    nodeedgeparent.cpp \
+    formgraph.cpp \
+    mainwindow.cpp
+
+FORMS += \
+    formgraph.ui \
+    mainwindow.ui
 

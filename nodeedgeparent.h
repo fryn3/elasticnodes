@@ -5,7 +5,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 
-#define DEBUG
+//#define DEBUG
 
 class GraphWidget;
 

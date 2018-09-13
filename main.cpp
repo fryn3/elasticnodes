@@ -6,7 +6,7 @@
 #include <QDir>
 #include <QList>
 #include <QDebug>
-#include "win.h"
+#include "formgraph.h"
 
 const QString MILI = "/MiliMatrix.txt";
 const QString MURA = "/MuraMatrix.txt";
@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
 
-    Win *widget = new Win;
+    FormGraph *widget = new FormGraph;
 
     QFile in(QCoreApplication::applicationDirPath() + SELECTED_FILE);
     if (!in.open(QIODevice::ReadOnly | QIODevice::Text))
