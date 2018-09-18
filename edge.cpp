@@ -32,7 +32,14 @@ Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     line1.setLength(line1.length() / 2);
     QLineF line2(line1.p2(), line1.p1());
     QLineF line3 = line2.normalVector();
-    line3.setLength(30);
+    int countCopy = 0;
+    foreach (auto e, source->edges()) {
+        if (e->dest == dest) {
+            countCopy++;
+        }
+    }
+
+    line3.setLength(pow(-1, countCopy) * countCopy * 20);
     bezier.setX(line3.p2().x());
     bezier.setY(line3.p2().y());                        // bezier
     QLineF line4(source->pos(), bezier);
