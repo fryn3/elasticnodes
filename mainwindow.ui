@@ -33,35 +33,35 @@
     <property name="title">
      <string>Файл</string>
     </property>
-    <addaction name="action"/>
-    <addaction name="action_2"/>
-    <addaction name="action_3"/>
-    <addaction name="action_4"/>
-    <addaction name="action_5"/>
+    <addaction name="actOpen"/>
+    <addaction name="actClose"/>
+    <addaction name="actSave"/>
+    <addaction name="actSaveAs"/>
+    <addaction name="actExit"/>
    </widget>
    <addaction name="menu"/>
   </widget>
-  <action name="action">
+  <action name="actOpen">
    <property name="text">
     <string>Открыть</string>
    </property>
   </action>
-  <action name="action_2">
+  <action name="actClose">
    <property name="text">
     <string>Закрыть</string>
    </property>
   </action>
-  <action name="action_3">
+  <action name="actSave">
    <property name="text">
     <string>Сохранить</string>
    </property>
   </action>
-  <action name="action_4">
+  <action name="actSaveAs">
    <property name="text">
     <string>Сохранить как</string>
    </property>
   </action>
-  <action name="action_5">
+  <action name="actExit">
    <property name="text">
     <string>Выход</string>
    </property>
@@ -76,5 +76,22 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actExit</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>221</x>
+     <y>281</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
