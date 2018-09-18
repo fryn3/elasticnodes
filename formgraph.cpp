@@ -401,54 +401,29 @@ void FormGraph::checkedMatrixStr()
             }
         }
     }
-//    if (automat->t->type() == Automata::Mura::Type) {
-        for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
-            for (auto destN = 0; destN < nodes.size(); destN++) {
-                QStringList duplicateEdge;  // условно, объеденяются через запятую
-                foreach (auto edge, edges) {
-                    if ((listNums(edge->sourceNode()->textContent())
-                            .at(0).toInt() == sourceN)
-                            && (listNums(edge->destNode()->textContent())
-                                .at(0).toInt() == destN)) {
-                        duplicateEdge.append(edge->textContent());
-                    }
-                }
-                if (duplicateEdge.size() == 0) {
-                    if (automat->t->type() == Automata::Mili::Type) {
-                        result.append("-/-");
-                    } else if (automat->t->type() == Automata::Mura::Type) {
-                        result.append("-");
-                    }
-                } else {
-                    result.append(duplicateEdge.join(","));
+
+    for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
+        for (auto destN = 0; destN < nodes.size(); destN++) {
+            QStringList duplicateEdge;  // условно, объеденяются через запятую
+            foreach (auto edge, edges) {
+                if ((listNums(edge->sourceNode()->textContent())
+                        .at(0).toInt() == sourceN)
+                        && (listNums(edge->destNode()->textContent())
+                            .at(0).toInt() == destN)) {
+                    duplicateEdge.append(edge->textContent());
                 }
             }
+            if (duplicateEdge.size() == 0) {
+                if (automat->t->type() == Automata::Mili::Type) {
+                    result.append("-/-");
+                } else if (automat->t->type() == Automata::Mura::Type) {
+                    result.append("-");
+                }
+            } else {
+                result.append(duplicateEdge.join(","));
+            }
         }
-//    } else if (automat->t->type() == Automata::Mili::Type) {
-//        for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
-//            for (auto destN = 0; destN < nodes.size(); destN++) {
-//                bool findEdge = false;
-//                foreach (auto edge, edges) {
-//                    if ((listNums(edge->sourceNode()->textContent())
-//                            .at(0).toInt() == sourceN)
-//                            && (listNums(edge->destNode()->textContent())
-//                                .at(0).toInt() == destN)) {
-//                        result.append(edge->textContent());
-//                        findEdge = true;
-//                    }
-//                }
-//                if (!findEdge) {
-//                    if (automat->t->type() == Automata::Mili::Type) {
-//                        result.append("-/-");
-//                    } else if (automat->t->type() == Automata::Mura::Type) {
-//                        result.append("-");
-//                    }
-//                }
-//            }
-//        }
-//    }
-
-
+    }
     if (automat->check(result)) {
         QPixmap pixMap = QPixmap::grabWidget(ui->grafViewScene);
         pixMap.save("OutFile.png");
