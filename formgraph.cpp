@@ -135,9 +135,9 @@ void FormGraph::onBtnConnectNodeClicked()
     if (ui->grafViewScene->scene()->selectedItems().size() > 0) {
         _source = qgraphicsitem_cast<Node *> (ui->grafViewScene->scene()->selectedItems().at(0));
         if (_source) {
+            ui->grafViewScene->scene()->clearSelection();
             ui->lTip->setText("Выберите, куда будет проведена дуга.");
             connFlag = 2;
-            ui->grafViewScene->scene()->clearSelection();
         } else {
             ui->lTip->clear();
             connFlag = 0;
@@ -381,6 +381,7 @@ void FormGraph::checkedMatrixStr()
         result.append(QString("%1").arg(nodes.size()));
     } else if (automat->t->type() == Automata::Mura::Type) {
         result.append(QString("%1").arg(nodes.size() + 1));
+        // Заполнение строчки с y2,y3 или y1
         for (int aN = 0; aN < nodes.size(); aN++) {
             bool flError = true;
             foreach (auto node, nodes) {
@@ -400,27 +401,53 @@ void FormGraph::checkedMatrixStr()
             }
         }
     }
-    for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
-        for (auto destN = 0; destN < nodes.size(); destN++) {
-            bool findEdge = false;
-            foreach (auto edge, edges) {
-                if ((listNums(edge->sourceNode()->textContent())
-                        .at(0).toInt() == sourceN)
-                        && (listNums(edge->destNode()->textContent())
-                            .at(0).toInt() == destN)) {
-                    result.append(edge->textContent());
-                    findEdge = true;
+//    if (automat->t->type() == Automata::Mura::Type) {
+        for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
+            for (auto destN = 0; destN < nodes.size(); destN++) {
+                QStringList duplicateEdge;  // условно, объеденяются через запятую
+                foreach (auto edge, edges) {
+                    if ((listNums(edge->sourceNode()->textContent())
+                            .at(0).toInt() == sourceN)
+                            && (listNums(edge->destNode()->textContent())
+                                .at(0).toInt() == destN)) {
+                        duplicateEdge.append(edge->textContent());
+                    }
                 }
-            }
-            if (!findEdge) {
-                if (automat->t->type() == Automata::Mili::Type) {
-                    result.append("-/-");
-                } else if (automat->t->type() == Automata::Mura::Type) {
-                    result.append("-");
+                if (duplicateEdge.size() == 0) {
+                    if (automat->t->type() == Automata::Mili::Type) {
+                        result.append("-/-");
+                    } else if (automat->t->type() == Automata::Mura::Type) {
+                        result.append("-");
+                    }
+                } else {
+                    result.append(duplicateEdge.join(","));
                 }
             }
         }
-    }
+//    } else if (automat->t->type() == Automata::Mili::Type) {
+//        for (auto sourceN = 0; sourceN < nodes.size(); sourceN++) {
+//            for (auto destN = 0; destN < nodes.size(); destN++) {
+//                bool findEdge = false;
+//                foreach (auto edge, edges) {
+//                    if ((listNums(edge->sourceNode()->textContent())
+//                            .at(0).toInt() == sourceN)
+//                            && (listNums(edge->destNode()->textContent())
+//                                .at(0).toInt() == destN)) {
+//                        result.append(edge->textContent());
+//                        findEdge = true;
+//                    }
+//                }
+//                if (!findEdge) {
+//                    if (automat->t->type() == Automata::Mili::Type) {
+//                        result.append("-/-");
+//                    } else if (automat->t->type() == Automata::Mura::Type) {
+//                        result.append("-");
+//                    }
+//                }
+//            }
+//        }
+//    }
+
 
     if (automat->check(result)) {
         QPixmap pixMap = QPixmap::grabWidget(ui->grafViewScene);
@@ -440,7 +467,7 @@ void FormGraph::sceneSelectionChanged()
     dlgInput->hide();
     QList<QGraphicsItem *> l = ui->grafViewScene->scene()->selectedItems();
     if (l.size() == 1) {
-        ui->lTip->setText("Выделена вершина. ");
+        ui->lTip->setText("Выделена вершина.");
         Node *node = qgraphicsitem_cast<Node *>(l.at(0));
         if (node) {
             // Выделена вершина!
@@ -449,26 +476,14 @@ void FormGraph::sceneSelectionChanged()
                 // Назначен "Источник"
                 _source = node;
                 connFlag = 2;
-                ui->lTip->setText("Выберите вершину куда будет проведена дуга");
+                ui->lTip->setText("Выберите вершину куда будет проведена дуга.");
             } else if (connFlag == 2) {
                 // Нужно соединить с новой вершиной
-                // Проверка на повторное соединение
-                bool miss = false;
-                /*for (auto edg : _source->edges()) {
-                    if (edg->sourceNode() == _source && edg->destNode() == node) {
-                        miss = true;
-                        lTip->setText("Попытка повторного соединения.");
-                        break;
-                    }
-                }*/
-                if (!miss) {
-                    Edge *e = new Edge(_source, node, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
-                    edges.append(e);
-                    ui->grafViewScene->scene()->addItem(e);
-                    ui->btnConnectNode->setChecked(false);
+                Edge *e = new Edge(_source, node, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                edges.append(e);
+                ui->grafViewScene->scene()->addItem(e);
+                ui->btnConnectNode->setChecked(false);
 
-
-                }
                 connFlag = 0;
                 _source = nullptr;
             } else if (connFlag==3){
@@ -492,6 +507,7 @@ void FormGraph::sceneSelectionChanged()
         qDebug() << "grafViewScene->scene()->selectedItems().size() == " << l.size();
     } else {
         // Пропало выделение (после удаления или нажатия на "Соединить")
+        ui->lTip->setText("");
         ui->btnDelete->setEnabled(false);
         ui->btnConnectNode->setEnabled(false);
     }

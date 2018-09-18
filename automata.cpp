@@ -167,7 +167,6 @@ MuraTable::MuraTable(QStringList source) : Table(source)
                 countY = y;
             }
         }
-
     }
 
     _check.resize(countA);
@@ -207,21 +206,39 @@ MiliMatrix::MiliMatrix(QStringList source) : Matrix (source)
     // Сортировка
     for (auto row = 0; row < dataInt.size(); row++) {
         for (auto col = 0; col < dataInt.at(0).size(); col++) {
-            // Первое число не сортировать
-            qSort(dataInt[row][col].begin() + 1, dataInt[row][col].end());
+            // Первое число ПОСЛЕ ЗАПЯТОЙ не сортировать
+            // x1/y1; -/-; x1/y2,x2/y1,y2
+            QStringList edges = dataStr[row][col].split(",x", QString::SkipEmptyParts);
+            std::sort(edges.begin(), edges.end(), [](QString s1, QString s2) {
+                    return listNums(s1).at(0).toInt() < listNums(s2).at(0).toInt();});
+
+            dataInt[row][col].clear();
+            foreach(auto edge, edges) {
+                QList<int> lInt;
+                auto edgeNum = listNums(edge);
+                foreach (auto n, edgeNum) {
+                    lInt.append(n.toInt());
+                }
+                if (lInt.size() > 0) {
+                    std::sort(lInt.begin() + 1, lInt.end());
+                }
+                dataInt[row][col].append(lInt);
+                dataInt[row][col].append(-1);
+            }
+//            qSort(dataInt[row][col].begin() + 1, dataInt[row][col].end());    // так было. Надо удалить
         }
     }
     // countX, countY
     for (auto row = dataInt.begin(); row != dataInt.end(); row++) { // х2/-; -/-; -/-; -/-; х1/у4; -/-; х1/у1,у5;
         for (auto cell = row->begin(); cell != row->end(); cell++) {
-            if (cell->size() == 1) {
+            if (cell->size() == 1 * 2 * cell->count(-1)) {
                 auto x = cell->at(0);
                 if (x > countX) {
                     countX = x;
                 }
-            } else if (cell->size() > 1) {
+            } else if (cell->size() > 1 * 2 * cell->count(-1)) {
                 for (auto pY = cell->begin() + 1; pY != cell->end(); pY++) {
-                    if (*pY > countY) {
+                    if (*pY != -1 && *pY > countY) {
                         countY = *pY;
                     }
                 }
