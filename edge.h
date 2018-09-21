@@ -14,36 +14,33 @@ public:
     virtual ~Edge() override;
     void setTextContent(QString text) override;
     QString textContent() const override;
-    const uint id;
     Node *sourceNode() const;
     Node *destNode() const;
     void adjust();
 
     enum { Type = NodeEdgeParent::Type + 2 };
     int type() const override { return Type; }
+    int id() const override;
 
+    void writeToJson(QJsonObject &json) const override;
+    void readFromJson(const QJsonObject &json) override;
 protected:
+    int _id;
     QString textEdge;
+    Node *source, *dest;
+    QPointF bezier;         // для Кривой Безье
+    QLineF beforeLine;      // от Источника до Получателя
+    qreal arrowSize;
+    bool flSelected;
     QRectF boundingRect() const override;
     QPainterPath shape() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
-    void bezierPosFinded();
+    QPointF newPosBezier() const;
+    QPointF newPosText() const;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
     QPainterPath pathBezierCurve() const;
     QPainterPath pathBezierPoint() const;
-private:
-    static uint _idStatic;
-    static int _offsAngle;
-    Node *source, *dest;
-    QPointF sourcePoint;
-    QPointF destPoint;
-    QPointF bezier;         // для Кривой Безье
-    qreal angleBezier;      // угол от Источника
-    qreal distBezier;       // расстояние до Источника
-    QLineF beforeLine;      // от Источника до Получателя
-    QPointF textPoint;
-    qreal arrowSize;
-    bool flSelected;
+    static int _idStatic;
 };
 
 #endif // EDGE_H

@@ -17,28 +17,25 @@ class GraphWidget : public QGraphicsView
     Q_OBJECT
 
 public:
-    GraphWidget(QWidget *parent = 0);
+    GraphWidget(QWidget *parent = nullptr);
 
     void itemMoved();
-    void startBezier(Edge *e);
 public slots:
     void addNode();
     void shuffle();
     void zoomIn();
     void zoomOut();
-
-
+    void writeToJson(QJsonObject &json) const;
+    void readFromJson(const QJsonObject &json);
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     //void contextMenuEvent(QContextMenuEvent *event);
     void mousePressEvent(QMouseEvent *event) override;
 #if QT_CONFIG(wheelevent)
     void wheelEvent(QWheelEvent *event) override;
-
 #endif
-    Edge *bezierEdge;
     void scaleView(qreal scaleFactor);
-    void mouseReleaseEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event) override;
 signals:
     void editItem();
 

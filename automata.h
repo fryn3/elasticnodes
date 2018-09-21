@@ -4,6 +4,8 @@
 #include <QVector>
 #include <QList>
 #include <QMultiMap>
+#include <QJsonObject>
+#include <QJsonArray>
 
 
 inline QStringList listNums(QString str) { return str.split(QRegExp("[^0-9]"), QString::SkipEmptyParts); }
@@ -36,6 +38,7 @@ struct Universal {
     Type *t;
     Format *f;
     Universal(const QStringList data);
+    static Universal *readFromJson(const QJsonObject &json);
     bool check(QVector<QMultiMap<QString, int> > ch);
     bool check(QVector<QVector<int> > ch);
     // Пока работает только для Matrix
@@ -86,8 +89,10 @@ public:
     int countX;                         // Кол-во вых. сигн. В абстр классе == 0!
     int countY;                         // Кол-во вход. сигн. В абстр классе == 0!
     friend bool operator== (const Format &f1, const Format &f2);
+    void writeToJson(QJsonObject &json) const;
 protected:
     Format(const QStringList source);
+    QStringList _source;
     bool _fail;
     QVector<QVector<QString> > dataStr;
     QVector<QVector<QList<int> > > dataInt;

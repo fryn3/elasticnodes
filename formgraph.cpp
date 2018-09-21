@@ -108,7 +108,7 @@ void FormGraph::onBtnCreateNodeClicked()
         node = new Node(ui->grafViewScene, QString(nodeText).arg(numNode));
     } else {
         node = new Node(ui->grafViewScene);
-        numNode = node->id;
+        numNode = node->id();
     }
     // Определяет сколько вершин будут появлятся на одной оси У
     int nodeInRow = 6;
@@ -470,10 +470,6 @@ void FormGraph::sceneSelectionChanged()
             ui->btnConnectNode->setEnabled(false);
             connFlag = false;
             _source = nullptr;
-
-            Edge *e = qgraphicsitem_cast<Edge *>(l.at(0));
-            ui->grafViewScene->startBezier(e);
-
         }
         ui->btnDelete->setEnabled(true);
 

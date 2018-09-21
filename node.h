@@ -17,9 +17,11 @@ public:
     static const QPen _pen;
     Node(GraphWidget *graphWidget, QString textInNode = "");
     virtual ~Node() override;
-    const int id;
+
     void setTextContent(QString text) override;
     QString textContent() const override;
+    void writeToJson(QJsonObject &json) const override;
+    void readFromJson(const QJsonObject &json) override;
     void addEdge(Edge *edge);
     QList<Edge *> edges() const;
     enum { Type = NodeEdgeParent::Type + 1 };
@@ -31,14 +33,14 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     static int idStatic();
     void removeEdge(Edge *edge);
+    int id() const override;
 protected:
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-    QString textInNode;  // который будет внутри вершины
-
-private:
+    int _id;
     QList<Edge *> edgeList;
     QPointF newPos;
     static int _idStatic;
+    QString textInNode;  // который будет внутри вершины
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 
 #endif // NODE_H

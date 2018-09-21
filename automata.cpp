@@ -1,4 +1,5 @@
 #include "automata.h"
+
 namespace Automata {
 
 Universal::Universal(QStringList data) : t(nullptr), f(nullptr) {
@@ -32,6 +33,28 @@ Universal::Universal(QStringList data) : t(nullptr), f(nullptr) {
     }
     if (!t || !f)
         qDebug() << "Universal() : in dynamic_cast is error";
+}
+
+Universal *Universal::readFromJson(const QJsonObject &json)
+{
+    if (json.contains("Automat") && json["Automat"].isObject()) {
+        QJsonObject jsonA = json["Automat"].toObject();
+        if (jsonA.contains("source") && jsonA["source"].isArray()) {
+            QStringList source;
+            QJsonArray jsonArray = jsonA["source"].toArray();
+            foreach (auto obj, jsonArray) {
+                source.append(obj.toString());
+            }
+            return new Universal(source);
+        } else {
+            qDebug() << "QJsonObject не содержит source";
+            return nullptr;
+        }
+    } else {
+        qDebug() << "QJsonObject не содержит Automat";
+        return nullptr;
+    }
+    return nullptr;
 }
 
 bool Universal::check(QVector<QMultiMap<QString, int> > ch)
@@ -71,8 +94,19 @@ bool operator==(const Format &f1, const Format &f2)
     return f1.dataInt == f2.dataInt;
 }
 
+void Format::writeToJson(QJsonObject &json) const
+{
+    QJsonObject jsonFormat;
+    QJsonArray jsonArray;
+    foreach (auto str, _source) {
+        jsonArray.append(QJsonValue(str));
+    }
+    jsonFormat["source"] = jsonArray;
+    json["Automat"] = jsonFormat;
+}
+
 Format::Format(QStringList source)
-    : countA(0), countX(0), countY(0), _fail(false)
+    : countA(0), countX(0), countY(0), _source(source), _fail(false)
 {   // countX, countY устанавлиавть в потомках
     if (source.size() < FormatFile::COUNT_HEADER) {
         qDebug() << "Table : source.size() < COUNT_HEADER";

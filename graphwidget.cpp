@@ -1,5 +1,4 @@
 #include "graphwidget.h"
-#include <QDebug>
 
 GraphWidget::GraphWidget(QWidget *parent)
     : QGraphicsView(parent)
@@ -14,7 +13,6 @@ GraphWidget::GraphWidget(QWidget *parent)
     setRenderHint(QPainter::Antialiasing);
     setTransformationAnchor(AnchorUnderMouse);
     scale(qreal(0.8), qreal(0.8));
-    bezierEdge=nullptr;
 }
 
 void GraphWidget::addNode()
@@ -49,12 +47,8 @@ void GraphWidget::mousePressEvent(QMouseEvent *event){
 
         break;
     }
-\
     QGraphicsView::mousePressEvent(event);
 }
-
-
-
 
 void GraphWidget::keyPressEvent(QKeyEvent *event)
 {
@@ -103,7 +97,7 @@ void GraphWidget::keyPressEvent(QKeyEvent *event)
 #if QT_CONFIG(wheelevent)
 void GraphWidget::wheelEvent(QWheelEvent *event)
 {
-    scaleView(pow((double)2, -event->delta() / 240.0));
+    scaleView(pow(double(2), -event->delta() / 240.0));
 }
 #endif
 
@@ -134,19 +128,47 @@ void GraphWidget::zoomOut()
     scaleView(1 / qreal(1.2));
 }
 
-void GraphWidget::startBezier(Edge *e){
-    bezierEdge=e;
+void GraphWidget::writeToJson(QJsonObject &json) const
+{
+    QJsonArray jsonArray;
+    jsonArray.append(transform().m11());
+    jsonArray.append(transform().m12());
+    jsonArray.append(transform().m13());
+    jsonArray.append(transform().m21());
+    jsonArray.append(transform().m22());
+    jsonArray.append(transform().m23());
+    jsonArray.append(transform().m31());
+    jsonArray.append(transform().m32());
+    jsonArray.append(transform().m33());
+    QJsonObject jsonWidget;
+    jsonWidget["scale"] = jsonArray;
+    json["GraphWidget"] = jsonWidget;
+}
+
+void GraphWidget::readFromJson(const QJsonObject &json)
+{
+    if (json.contains("GraphWidget") && json["GraphWidget"].isObject()) {
+        QJsonObject jsonWid = json["GraphWidget"].toObject();
+        if (jsonWid.contains("scale") && jsonWid["scale"].isArray()) {
+            QJsonArray jsonArray = jsonWid["scale"].toArray();
+            QTransform tr(jsonArray.at(0).toDouble(),
+                          jsonArray.at(1).toDouble(),
+                          jsonArray.at(2).toDouble(),
+                          jsonArray.at(3).toDouble(),
+                          jsonArray.at(4).toDouble(),
+                          jsonArray.at(5).toDouble(),
+                          jsonArray.at(6).toDouble(),
+                          jsonArray.at(7).toDouble(),
+                          jsonArray.at(8).toDouble());
+            setTransform(tr);
+        } else {
+            qDebug() << "QJsonObject не содержит scale";
+        }
+    } else {
+        qDebug() << "QJsonObject не содержит GraphWidget";
+    }
 }
 
 void GraphWidget::mouseReleaseEvent(QMouseEvent *event){
-//    if (bezierEdge!=nullptr){
-//        bezierEdge->bezier.setX(event->x());
-//        bezierEdge->bezier.setY(event->y());
-//        qDebug()<<"graph release"<<event->x()<<" "<<event->y()<<" "<<event->globalX()<<" "<<event->globalY();
-
-//        bezierEdge->adjust();
-//        bezierEdge=nullptr;
-//    }
     QGraphicsView::mouseReleaseEvent(event);
-
 }

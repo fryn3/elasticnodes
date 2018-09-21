@@ -12,7 +12,7 @@ const QPen Node::_pen = QPen(Qt::black, 2);
 int Node::_idStatic = 0;
 
 Node::Node(GraphWidget *graphWidget, QString text)
-    : NodeEdgeParent(graphWidget), id(_idStatic++)//, graph(graphWidget)
+    : NodeEdgeParent(graphWidget), _id(_idStatic++)
 {
     setFlag(ItemIsSelectable);
     setFlag(ItemIsMovable);
@@ -24,7 +24,7 @@ Node::Node(GraphWidget *graphWidget, QString text)
 #endif
     graph->scene()->addItem(this);    // сразу добавляет на сцену
     if (text.isEmpty()) {
-        textInNode = QString("%1").arg(id);
+        textInNode = QString("%1").arg(_id);
     } else {
         textInNode = text;
     }
@@ -45,6 +45,50 @@ void Node::setTextContent(QString text)
 QString Node::textContent() const
 {
     return textInNode;
+}
+
+void Node::writeToJson(QJsonObject &json) const
+{
+    QJsonObject jsonNode;
+    jsonNode["id"] = _id;
+    QJsonObject jsonPos
+    {
+        {"x", pos().x()},
+        {"y", pos().y()},
+    };
+    jsonNode["pos"] = jsonPos;
+    jsonNode["textContent"] = textContent();
+
+    json["Node"] = jsonNode;
+}
+
+void Node::readFromJson(const QJsonObject &json)
+{
+    if (missKey(json, "Node")) {
+        return;
+    }
+    QJsonObject jsonN = json["Node"].toObject();
+    if (missKey(jsonN, "id")) {
+        return;
+    }
+    _id = jsonN["id"].toInt();
+    if (_idStatic <= _id) {
+        _idStatic = _id + 1;
+    }
+    if (missKey(jsonN, "pos")) {
+        return;
+    }
+    QJsonObject jsonPos = jsonN["pos"].toObject();
+    if (missKey(jsonPos, "x") || missKey(jsonPos, "y")) {
+        return;
+    }
+    double x = jsonPos["x"].toDouble();
+    double y = jsonPos["y"].toDouble();
+    setPos(x, y);
+    if (missKey(jsonN, "textContent")) {
+        return;
+    }
+    setTextContent(jsonN["textContent"].toString());
 }
 
 void Node::addEdge(Edge *edge)
@@ -111,4 +155,9 @@ void Node::removeEdge(Edge *edge)
             break;
         }
     }
+}
+
+int Node::id() const
+{
+    return _id;
 }
