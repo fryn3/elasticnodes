@@ -54,7 +54,11 @@ Universal *Universal::readFromJson(const QJsonObject &json)
         qDebug() << "QJsonObject не содержит Automat";
         return nullptr;
     }
-    return nullptr;
+}
+
+void Universal::writeToJson(QJsonObject &json) const
+{
+    f->writeToJson(json);
 }
 
 bool Universal::check(QVector<QMultiMap<QString, int> > ch)

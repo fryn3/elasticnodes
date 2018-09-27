@@ -39,6 +39,7 @@ struct Universal {
     Format *f;
     Universal(const QStringList data);
     static Universal *readFromJson(const QJsonObject &json);
+    void writeToJson(QJsonObject &json) const;
     bool check(QVector<QMultiMap<QString, int> > ch);
     bool check(QVector<QVector<int> > ch);
     // Пока работает только для Matrix
