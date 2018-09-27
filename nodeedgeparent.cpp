@@ -21,7 +21,7 @@ void NodeEdgeParent::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void NodeEdgeParent::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-#ifdef DEBUG
+#ifdef DEBUG_NODE_EDGE
     QPen pen2(Qt::yellow, 0, Qt::DotLine);
     painter->setOpacity(0.4);
     painter->setPen(pen2);
@@ -29,5 +29,9 @@ void NodeEdgeParent::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     painter->setOpacity(1);
     QPen pen(Qt::red, 0, Qt::SolidLine);
     painter->strokePath(shape(), pen);
+#else
+    Q_UNUSED(painter);
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
 #endif
 }

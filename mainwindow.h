@@ -15,6 +15,10 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     FormGraph *formGraph;
+protected slots:
+    void graphSave() const;
+    void graphSaveAs();
+    void graphOpen();
 private:
     Ui::MainWindow *ui;
 };

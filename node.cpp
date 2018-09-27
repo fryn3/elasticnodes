@@ -19,7 +19,7 @@ Node::Node(GraphWidget *graphWidget, QString text)
     setFlag(ItemSendsGeometryChanges);
     setCacheMode(DeviceCoordinateCache);
     setZValue(10);
-#ifdef DEBUG
+#ifdef DEBUG_NODE_EDGE
     setZValue(-10);
 #endif
     graph->scene()->addItem(this);    // сразу добавляет на сцену

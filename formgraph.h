@@ -19,8 +19,8 @@
 #include <QHeaderView>
 #include <QList>
 #include <QMessageBox>
-#include "graphwidget.h"
 #include "automata.h"
+#include "graphwidget.h"
 #include "dlginput.h"
 
 namespace Ui {
@@ -39,10 +39,6 @@ public:
 
 private:
     Ui::FormGraph *ui;
-
-//    QPushButton *btnCreateNode, *btnConnectNode, *btnDelete;
-
-//    QPushButton *btnCheck;   // Проверка всего графа с вариантом.
     DlgInput *dlgInput;
 
     Node *_source;  // Сохраняет вершину при нажатии на кнопку "Соединить"
@@ -51,17 +47,14 @@ private:
     // connFlag == 2 Надо отметить только "Получатель"
     int connFlag;
 public:
-    Edge * _edge;
     QList <Node*> nodes;
-
-//    QLabel *lNameGraf,  // Для вывода имя графа: Мили или Мура
-//    *lTip;      // Подсказки для всего
-//    GraphWidget *grafViewScene;
     QList <Edge*> edges;
+    static FormGraph *openGraph(QString fileName, bool jsonFormat = false);
 signals:
 
 public slots:
     bool CreateAutomat(QStringList source);
+    void CreateAutomat(Automata::Universal *_automat);
     void showInput();
     void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
@@ -73,10 +66,9 @@ public slots:
     void sceneSave();
     void dropEvent(QDropEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
-    //Загрузить автомат
-    //    void loadAuto(int type,QStringList ylist,QStringList xlist,int size);
     void checkedTable();
     void checkedMatrixStr();
+    bool saveGraph(QString fileName, bool jsonFormat = false) const;
 };
 
 #endif // FORMGRAPH_H

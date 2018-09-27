@@ -1,5 +1,6 @@
 #include "edge.h"
 #include "node.h"
+#include "graphwidget.h"
 #include <QString>
 #include <qmath.h>
 #include <QPainter>
@@ -42,6 +43,23 @@ Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     bezier.setX(line3.p2().x());
     bezier.setY(line3.p2().y());                        // bezier
     adjust();
+    graph->scene()->addItem(this);    // сразу добавляет на сцену
+}
+
+Edge::Edge(const QJsonObject &json, GraphWidget *graphWidget)
+    : NodeEdgeParent(graphWidget),
+      arrowSize(15), flSelected(false)
+{
+    readFromJson(json);
+    setFlag(ItemIsSelectable);
+    source->addEdge(this);
+    if (source != dest) {
+        dest->addEdge(this);
+        setFlag(ItemIsMovable);
+        setFlag(ItemSendsGeometryChanges);
+    }
+    adjust();
+    graph->scene()->addItem(this);    // сразу добавляет на сцену
 }
 
 Edge::~Edge()
@@ -76,44 +94,80 @@ void Edge::writeToJson(QJsonObject &json) const
 {
     QJsonObject jsonEdge;
     jsonEdge["id"] = _id;
-    QJsonObject jsonPos
-    {
-        {"x", pos().x()},
-        {"y", pos().y()},
-    };
-    jsonEdge["pos"] = jsonPos;
     jsonEdge["textContent"] = textContent();
+    jsonEdge["sourceId"] = source->id();
+    jsonEdge["destId"] = dest->id();
+    QJsonObject jsonBezier
+    {
+        {"x", bezier.x()},
+        {"y", bezier.y()}
+    };
+    jsonEdge["Bezier"] = jsonBezier;
+    QJsonObject jsonLine
+    {
+            {"p1x", beforeLine.p1().x()},
+            {"p1y", beforeLine.p1().y()},
+            {"p2x", beforeLine.p2().x()},
+            {"p2y", beforeLine.p2().y()},
+    };
+    jsonEdge["line"] = jsonLine;
 
     json["Edge"] = jsonEdge;
 }
 
 void Edge::readFromJson(const QJsonObject &json)
 {
-    if (missKey(json, "Node")) {
+    if (missKey(json, "Edge")) {
         return;
     }
-    QJsonObject jsonN = json["Node"].toObject();
-    if (missKey(jsonN, "id")) {
+    QJsonObject jsonEdge = json["Edge"].toObject();
+    if (missKey(jsonEdge, "id") || missKey(jsonEdge, "textContent")
+            || missKey(jsonEdge, "sourceId") || missKey(jsonEdge, "destId")
+            || missKey(jsonEdge, "Bezier") || missKey(jsonEdge, "line")) {
         return;
     }
-    _id = jsonN["id"].toInt();
+    _id = int(jsonEdge["id"].toDouble());
     if (_idStatic <= _id) {
         _idStatic = _id + 1;
     }
-    if (missKey(jsonN, "pos")) {
+    textEdge = jsonEdge["textContent"].toString();  // не вызывать setContent()
+    int sourceId = jsonEdge["sourceId"].toInt();
+    int destId = jsonEdge["destId"].toInt();
+    uint fl = 0; // флаг нахождение двух вершин
+    for(auto it: graph->scene()->items()) {
+        Node *n = dynamic_cast<Node*>(it);
+        if (n) {
+            if (n->id() == sourceId) {
+                source = n;
+                fl |= 1;
+            }
+            if (n->id() == destId) {
+                dest = n;
+                fl |= 2;
+            }
+            if (fl == 3) {  // 2 флага подняты
+                break;
+            }
+        }
+    }
+    if (fl != 3) {
+        qDebug() << "fl != 3";
+    }
+    QJsonObject jsonBezier = jsonEdge["Bezier"].toObject();
+    if (missKey(jsonBezier, "x") || missKey(jsonBezier, "y")) {
         return;
     }
-    QJsonObject jsonPos = jsonN["pos"].toObject();
-    if (missKey(jsonPos, "x") || missKey(jsonPos, "y")) {
+    double x = jsonBezier["x"].toDouble();
+    double y = jsonBezier["y"].toDouble();
+    bezier.setX(x);
+    bezier.setY(y);
+    QJsonObject jsonLine = jsonEdge["line"].toObject();
+    if (missKey(jsonLine, "p1x") || missKey(jsonLine, "p1y")
+            || missKey(jsonLine, "p2x") || missKey(jsonLine, "p2y")) {
         return;
     }
-    double x = jsonPos["x"].toDouble();
-    double y = jsonPos["y"].toDouble();
-    setPos(x, y);
-    if (missKey(jsonN, "textContent")) {
-        return;
-    }
-    setTextContent(jsonN["textContent"].toString());
+    beforeLine.setLine(jsonLine["p1x"].toDouble(), jsonLine["p1y"].toDouble(),
+                       jsonLine["p2x"].toDouble(), jsonLine["p2y"].toDouble());
 }
 
 void Edge::adjust()
@@ -203,7 +257,7 @@ int Edge::id() const
     return _id;
 }
 
-QPainterPath Edge::pathBezierCurve() const {
+QPainterPath Edge::pathBezierCurve() const {    // + text
     QPainterPath path;
     qreal qOffset = 5;
     QPointF newBezier = newPosBezier();
@@ -224,6 +278,16 @@ QPainterPath Edge::pathBezierCurve() const {
                  newBezier - (offset0 + offset1) / 2,
                  mapFromScene(source->pos()) - offset0);
     path.lineTo(mapFromScene(source->pos()) + offset0);
+    // Text
+    QPointF textPoint = newPosText();
+    qreal x = textPoint.x();
+    qreal y = textPoint.y();
+    path.moveTo(x, y);
+    path.lineTo(x, y - 18); // for QFont("Times", 11)
+    path.lineTo(x + 8 * textEdge.size(), y - 18);
+    path.lineTo(x + 8 * textEdge.size(), y + 4);
+    path.lineTo(x, y + 4);
+    path.lineTo(x, y);
     return path;
 }
 
@@ -317,12 +381,12 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
                          2 * Node::Radius,
                          16 * 180, 16 * -270);
         angle = 1.07 * M_PI;
-        destArrowP1 = dest->pos()+ QPointF(sin(angle - M_PI / 1.8) * arrowSize,
+        destArrowP1 = dest->pos()+ QPointF(sin(angle - M_PI / 1.8) * arrowSize + Node::Radius,
                                                  cos(angle - M_PI / 1.8) * arrowSize);
-        destArrowP2 = dest->pos() + QPointF(sin(angle - M_PI + M_PI / 1.8)* arrowSize,
+        destArrowP2 = dest->pos() + QPointF(sin(angle - M_PI + M_PI / 1.8) * arrowSize + Node::Radius,
                                                  cos(angle - M_PI + M_PI / 1.8) * arrowSize);
         painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
-        peak = dest->pos();
+        peak = dest->pos() + QPointF(Node::Radius, 0);
 
     }
     painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
@@ -330,7 +394,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setFont(QFont("Times", 11));
     painter->drawText(newPosText(), textEdge);
     if (flSelected) {
-        painter->drawEllipse(bezierPaint, SIZE_POINT - 1, SIZE_POINT - 1);// размер точки
+        painter->drawEllipse(bezierPaint, SIZE_POINT - 1, SIZE_POINT - 1);  // размер точки
     }
     NodeEdgeParent::paint(painter, option, widget);
 }
@@ -350,6 +414,7 @@ QVariant Edge::itemChange(GraphicsItemChange change, const QVariant &value)
     switch (change) {
     case ItemPositionChange:
         bezier = newPosBezier();
+        break;
     case ItemPositionHasChanged:
         beforeLine.setPoints(mapFromScene(source->pos()), mapFromScene(dest->pos()));
         adjust();

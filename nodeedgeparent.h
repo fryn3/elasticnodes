@@ -7,11 +7,11 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDebug>
-//#define DEBUG
+//#define DEBUG_NODE_EDGE
 
 inline bool missKey(const QJsonObject &json, QString key) {
     if (!json.contains(key)) {
-        qDebug() << "QJsonObject не содержит " << key;
+        qWarning() << "QJsonObject не содержит " << key;
         return true;
     }
     return false;

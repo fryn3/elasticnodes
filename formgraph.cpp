@@ -1,8 +1,10 @@
 #include "formgraph.h"
 #include "ui_formgraph.h"
 
+#include <QJsonDocument>
+
 FormGraph::FormGraph(QWidget *parent) :
-    QWidget(parent),
+    QWidget(parent), automat(nullptr),
     ui(new Ui::FormGraph),
     _source(nullptr), connFlag(false)
 {
@@ -21,10 +23,14 @@ FormGraph::FormGraph(QWidget *parent) :
 
 FormGraph::~FormGraph()
 {
+    ui->grafViewScene->scene()->clearSelection();
+    nodes.clear();
+    edges.clear();
     delete ui;
+    delete dlgInput;
 }
 
-bool FormGraph::CreateAutomat (QStringList source)
+bool FormGraph::CreateAutomat(QStringList source)
 {
     automat = new Automata::Universal(source);
     if (!automat->f || !automat->t){
@@ -34,6 +40,13 @@ bool FormGraph::CreateAutomat (QStringList source)
     ui->lNameGraf->setText((automat->t->type() == Automata::Mili::Type ? "Автомат Мили": "Автомат Мура"));
     ui->lTip->setText(QString("Вых файл: OutFile.png"));
     return true;
+}
+
+void FormGraph::CreateAutomat(Automata::Universal *_automat)
+{
+    automat = _automat;
+    ui->lNameGraf->setText((automat->t->type() == Automata::Mili::Type ? "Автомат Мили": "Автомат Мура"));
+    ui->lTip->setText(QString("Вых файл: OutFile.png"));
 }
 
 void FormGraph::closeEvent(QCloseEvent */*event*/)
@@ -60,15 +73,22 @@ void FormGraph::showInput()
         //dlgInput->eInput->setEnabled(true);
         if (it->type() == Node::Type) {
             Node *n = qgraphicsitem_cast<Node *>(it);
-
-            dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpNode()));
+            if (automat) {
+                dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpNode()));
+                dlgInput->lTipInput->setText(automat->t->tipNode());
+            } else {
+                dlgInput->lTipInput->setText("Введите текст");
+            }
             dlgInput->eInput->setText(n->textContent());
-            dlgInput->lTipInput->setText(automat->t->tipNode());
         } else if (it->type() == Edge::Type) {
             Edge *e = qgraphicsitem_cast<Edge *>(it);
-            dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpEdge()));
+            if (automat) {
+                dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpEdge()));
+                dlgInput->lTipInput->setText(automat->t->tipEdge());
+            } else {
+                dlgInput->lTipInput->setText("Введи текст");
+            }
             dlgInput->eInput->setText(e->textContent());
-            dlgInput->lTipInput->setText(automat->t->tipEdge());
         }
 
         //dlgInput->show();
@@ -86,8 +106,8 @@ void FormGraph::onBtnCreateNodeClicked()
 
 
     int x, y;           // расположение вершины на сцене
-    int numNode;
-    bool flFinding;     // флаг нахождения, при решение с каким состоянием создавать вершину
+    int numNode = 0;
+    bool flFinding = false;     // флаг нахождения, при решение с каким состоянием создавать вершину
     Node *node;
     if (automat) {
         for (auto i = 0; i < automat->f->countA; i++) {
@@ -454,9 +474,13 @@ void FormGraph::sceneSelectionChanged()
                 ui->lTip->setText("Выберите вершину куда будет проведена дуга.");
             } else if (connFlag == 2) {
                 // Нужно соединить с новой вершиной
-                Edge *e = new Edge(_source, node, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                Edge *e;
+                if (automat) {
+                    e = new Edge(_source, node, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                } else {
+                    e = new Edge(_source, node);
+                }
                 edges.append(e);
-                ui->grafViewScene->scene()->addItem(e);
                 ui->btnConnectNode->setChecked(false);
 
                 connFlag = 0;
@@ -498,3 +522,65 @@ void FormGraph::dropEvent(QDropEvent */*event*/){
     qDebug()<<"Dropped";
 }
 
+
+bool FormGraph::saveGraph(QString fileName, bool jsonFormat) const
+{
+    QFile saveFile(fileName);
+    if (!saveFile.open(QIODevice::WriteOnly)) {
+        qWarning("Couldn't open save file.");
+        return false;
+    }
+    QJsonObject graphJson;
+    automat->writeToJson(graphJson);                                                                // automat
+    ui->grafViewScene->writeToJson(graphJson);                                                      // scene
+    QJsonArray jsonNodes;
+    std::for_each(nodes.begin(), nodes.end(), [&] (Node *n) {
+        QJsonObject json;
+        n->writeToJson(json);
+        jsonNodes.append(json); });
+    graphJson["nodes"] = jsonNodes;                  // nodes
+    QJsonArray jsonEdges;
+    std::for_each(edges.begin(), edges.end(), [&] (Edge *e) {
+        QJsonObject json;
+        e->writeToJson(json);
+        jsonEdges.append(json); });
+    graphJson["edges"] = jsonEdges;                  // edges
+    QJsonDocument saveDoc(graphJson);
+    saveFile.write(jsonFormat ?
+                       saveDoc.toJson()
+                     : saveDoc.toBinaryData());
+    return true;
+}
+
+FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
+    QFile loadFile(fileName);
+    if (!loadFile.open(QIODevice::ReadOnly)) {
+        qWarning("Couldn't open graph file.");
+        return nullptr;
+    }
+    QByteArray saveData = loadFile.readAll();
+    QJsonDocument loadDoc(jsonFormat ?
+                              QJsonDocument::fromJson(saveData)
+                            : QJsonDocument::fromBinaryData(saveData));
+    const QJsonObject json = loadDoc.object();              // тут всё
+    FormGraph *g = new FormGraph;
+    g->CreateAutomat(Automata::Universal::readFromJson(json));      // Automat
+    g->ui->grafViewScene->readFromJson(json);                       // scene
+    if (missKey(json, "nodes") || missKey(json, "edges")) {
+        delete g;
+        return nullptr;
+    }
+    QJsonArray jsonNodes = json["nodes"].toArray();
+    std::for_each(jsonNodes.begin(), jsonNodes.end(), [&] (QJsonValue j) {
+        Node *n = new Node(g->ui->grafViewScene);
+        n->readFromJson(j.toObject());
+        g->nodes.append(n);
+    });
+    QJsonArray jsonEdges = json["edges"].toArray();
+    std::for_each(jsonEdges.begin(), jsonEdges.end(), [&] (QJsonValue j) {
+        Edge *e = new Edge(j.toObject(), g->ui->grafViewScene);
+        g->edges.append(e);
+    });
+
+    return g;
+}

@@ -11,6 +11,7 @@ class Edge : public NodeEdgeParent
 {
 public:
     Edge(Node *sourceNode, Node *destNode, QString textArrow = "");
+    Edge(const QJsonObject &json, GraphWidget *graphWidget);
     virtual ~Edge() override;
     void setTextContent(QString text) override;
     QString textContent() const override;

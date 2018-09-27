@@ -25,7 +25,9 @@ int main(int argc, char **argv)
         qDebug() << QString("Запуск без файла %1.").arg(SELECTED_FILE);
         qDebug() << "Директория,откуда запускается программа: "
                << QCoreApplication::applicationDirPath() << endl;
-        return 101;
+        m->show();
+        return app.exec();
+//        return 101;
     }
     QTextStream stream(&in);
     QStringList source;

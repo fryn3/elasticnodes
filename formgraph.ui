@@ -24,7 +24,7 @@
       </font>
      </property>
      <property name="text">
-      <string>TextLabel</string>
+      <string>Граф не выбран</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -70,18 +70,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="btnCheck">
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Проверить</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -94,6 +82,18 @@
        </property>
       </spacer>
      </item>
+     <item>
+      <widget class="QPushButton" name="btnCheck">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Проверить</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -104,7 +104,7 @@
       </font>
      </property>
      <property name="text">
-      <string>TextLabel</string>
+      <string>Откройте файл графа</string>
      </property>
     </widget>
    </item>

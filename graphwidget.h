@@ -2,8 +2,8 @@
 #define GRAPHWIDGET_H
 
 #include <QGraphicsView>
-#include "edge.h"
 #include "node.h"
+#include "edge.h"
 
 #include <math.h>
 
