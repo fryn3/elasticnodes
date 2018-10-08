@@ -11,22 +11,113 @@
 #include <QGraphicsSceneMouseEvent>
 
 const qreal PI = atan(1) * 4;
-int Edge::_idStatic = 0;
+int EdgeParent::_idStatic = 0;
 
-Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
+EdgeParent::EdgeParent(Node *sourceNode, Node *destNode, QString textArrow)
     : NodeEdgeParent(sourceNode->graph),
-      _id(_idStatic++), textEdge(textArrow),
-      arrowSize(15), flSelected(false)
+      textEdge(textArrow),
+      source(sourceNode), dest(destNode),
+      arrowSize(15)
 {
-    setFlag(ItemIsSelectable);
-    source = sourceNode;
-    dest = destNode;
+    _id = _idStatic++;
+    if (!dest) {
+        dest = source;
+    }
     source->addEdge(this);
     if (source != dest) {
         dest->addEdge(this);
-        setFlag(ItemIsMovable);
-        setFlag(ItemSendsGeometryChanges);
     }
+    setFlag(ItemIsSelectable);
+    setFlag(ItemIsMovable);
+    setFlag(ItemSendsGeometryChanges);
+}
+
+EdgeParent::EdgeParent(GraphWidget *graphWidget)
+    : NodeEdgeParent(graphWidget),
+      arrowSize(15)
+{
+//    readFromJson(json);
+    setFlag(ItemIsSelectable);
+    source->addEdge(this);
+    if (source != dest) {
+        dest->addEdge(this);
+    }
+    setFlag(ItemIsMovable);
+    setFlag(ItemSendsGeometryChanges);
+//    adjust();
+//    graph->scene()->addItem(this);    // сразу добавляет на сцену
+}
+
+EdgeParent::~EdgeParent()
+{
+    source->removeEdge(this);
+    if (source != dest)
+        dest->removeEdge(this);
+}
+
+void EdgeParent::setTextContent(QString text)
+{
+    textEdge = text;
+    adjust();
+}
+
+QString EdgeParent::textContent() const
+{
+    return textEdge;
+}
+
+Node *EdgeParent::sourceNode() const
+{
+    return source;
+}
+
+Node *EdgeParent::destNode() const
+{
+    return dest;
+}
+
+void EdgeParent::adjust()
+{
+    if (!source || !dest)
+        return;
+
+    prepareGeometryChange();
+    if(source != dest) {
+        for (auto edg : source->edges()) {
+            if (edg->sourceNode() == dest) {
+                if(_id > edg->_id) {
+                    edg->adjust();
+                }
+                break;
+            }
+        }
+    }
+}
+
+#define SIZE_POINT      (5)
+QPainterPath EdgeParent::pathPoint(QPointF point) const {
+    QPainterPath path;
+    path.moveTo(point + QPointF(-SIZE_POINT, -SIZE_POINT));
+    path.lineTo(point + QPointF(SIZE_POINT, -SIZE_POINT));
+    path.lineTo(point + QPointF(SIZE_POINT, SIZE_POINT));
+    path.lineTo(point + QPointF(-SIZE_POINT, SIZE_POINT));
+    path.lineTo(point + QPointF(-SIZE_POINT, -SIZE_POINT));
+    return path;
+}
+
+QPolygonF EdgeParent::arrowPolygon(QPointF peak, qreal angle) const
+{
+    QPainterPath p;
+    QLineF l1, l2;
+    l1.setP1(peak);             l2.setP1(peak);
+    l1.setLength(arrowSize);    l2.setLength(arrowSize);
+    l1.setAngle(angle + 180 - 10);    l2.setAngle(angle + 180 + 10);
+    return QPolygonF() << peak << l1.p2() << l2.p2();
+}
+
+Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
+    : EdgeParent(sourceNode, destNode, textArrow)
+{
     beforeLine.setPoints(source->pos(), dest->pos());   // от Источника до Получателя
     QLineF line1(source->pos(), dest->pos());
     line1.setLength(line1.length() / 2);
@@ -35,7 +126,7 @@ Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
     // смещение при повторном соединении
     int countCopy = 0;
     foreach (auto e, source->edges()) {
-        if (e->dest == dest) {
+        if (e->destNode() == dest) {
             countCopy++;
         }
     }
@@ -47,47 +138,11 @@ Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
 }
 
 Edge::Edge(const QJsonObject &json, GraphWidget *graphWidget)
-    : NodeEdgeParent(graphWidget),
-      arrowSize(15), flSelected(false)
+    : EdgeParent(graphWidget)
 {
     readFromJson(json);
-    setFlag(ItemIsSelectable);
-    source->addEdge(this);
-    if (source != dest) {
-        dest->addEdge(this);
-        setFlag(ItemIsMovable);
-        setFlag(ItemSendsGeometryChanges);
-    }
     adjust();
     graph->scene()->addItem(this);    // сразу добавляет на сцену
-}
-
-Edge::~Edge()
-{
-    source->removeEdge(this);
-    if (source != dest)
-        dest->removeEdge(this);
-}
-
-void Edge::setTextContent(QString text)
-{
-    textEdge = text;
-    adjust();
-}
-
-QString Edge::textContent() const
-{
-    return textEdge;
-}
-
-Node *Edge::sourceNode() const
-{
-    return source;
-}
-
-Node *Edge::destNode() const
-{
-    return dest;
 }
 
 void Edge::writeToJson(QJsonObject &json) const
@@ -170,24 +225,6 @@ void Edge::readFromJson(const QJsonObject &json)
                        jsonLine["p2x"].toDouble(), jsonLine["p2y"].toDouble());
 }
 
-void Edge::adjust()
-{
-    if (!source || !dest)
-        return;
-
-    prepareGeometryChange();
-    if(source != dest) {
-        for (auto edg : source->edges()) {
-            if (edg->sourceNode() == dest) {
-                if(_id > edg->_id) {
-                    edg->adjust();
-                }
-                break;
-            }
-        }
-    }
-}
-
 QPointF Edge::newPosText() const
 {
     QPointF textPoint;
@@ -252,11 +289,6 @@ QPointF Edge::newPosText() const
     return textPoint;
 }
 
-int Edge::id() const
-{
-    return _id;
-}
-
 QPainterPath Edge::pathBezierCurve() const {    // + text
     QPainterPath path;
     qreal qOffset = 5;
@@ -291,26 +323,14 @@ QPainterPath Edge::pathBezierCurve() const {    // + text
     return path;
 }
 
-#define SIZE_POINT      (5)
-QPainterPath Edge::pathBezierPoint() const {
-    QPainterPath path;
-    QPointF newBezier = newPosBezier();
-    path.moveTo(newBezier + QPointF(-SIZE_POINT, -SIZE_POINT));
-    path.lineTo(newBezier + QPointF(SIZE_POINT, -SIZE_POINT));
-    path.lineTo(newBezier + QPointF(SIZE_POINT, SIZE_POINT));
-    path.lineTo(newBezier + QPointF(-SIZE_POINT, SIZE_POINT));
-    path.lineTo(newBezier + QPointF(-SIZE_POINT, -SIZE_POINT));
-    return path;
-}
-
 // Для столкновений и выделения
 QPainterPath Edge::shape() const {
     QPainterPath path;
     if (source != dest) {
-        if (!flSelected) {
+        if (!isSelected()) {
             path = pathBezierCurve();
         } else {
-            path = pathBezierPoint();
+            path = pathPoint(newPosBezier());
         }
     } else {
         path.addEllipse(source->pos() + QPointF(Node::Radius, -Node::Radius),
@@ -341,7 +361,7 @@ QRectF Edge::boundingRect() const
                 << bezier + QPointF(-2, 0);
         return pathBezierCurve().boundingRect()
                 .united(pText.boundingRect())
-                .united(pathBezierPoint().boundingRect());
+                .united(pathPoint(newPosBezier()).boundingRect());
     }
     return shape().boundingRect();
 }
@@ -352,8 +372,9 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         return;
     double angle;
     QPointF peak, destArrowP1, destArrowP2;
-    painter->setPen(QPen((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     QPointF bezierPaint = newPosBezier();
+    QLineF line(bezierPaint, mapFromScene(dest->pos()));
     if (source != dest) {
         QPainterPath myPath;
         myPath.moveTo(mapFromScene(source->pos()));
@@ -361,7 +382,6 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         myPath.cubicTo(bezierPaint, bezierPaint, mapFromScene(dest->pos()));
 
         painter->drawPath(myPath);
-        QLineF line(bezierPaint, mapFromScene(dest->pos()));
         line.setLength(line.length() - Node::Radius);
         if (qFuzzyCompare(line.length(), qreal(0.)))
             return;
@@ -389,11 +409,13 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         peak = dest->pos() + QPointF(Node::Radius, 0);
 
     }
-    painter->setBrush((option->state & QStyle::State_Selected ? Qt::cyan: Qt::black));
-    painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
+    painter->setBrush((isSelected() ? Qt::cyan: Qt::black));
+//    painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
+    painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter->drawPolygon(arrowPolygon(peak, line.angle()));
     painter->setFont(QFont("Times", 11));
     painter->drawText(newPosText(), textEdge);
-    if (flSelected) {
+    if (isSelected()) {
         painter->drawEllipse(bezierPaint, SIZE_POINT - 1, SIZE_POINT - 1);  // размер точки
     }
     NodeEdgeParent::paint(painter, option, widget);
@@ -419,12 +441,109 @@ QVariant Edge::itemChange(GraphicsItemChange change, const QVariant &value)
         beforeLine.setPoints(mapFromScene(source->pos()), mapFromScene(dest->pos()));
         adjust();
         break;
-    case ItemSelectedChange:
-        flSelected = value.toBool();
-        break;
     default:
         break;
     };
-
     return QGraphicsItem::itemChange(change, value);
 }
+
+EdgeCircle::EdgeCircle(Node *sourceNode, QString textArrow)
+    : EdgeParent (sourceNode, sourceNode, textArrow)
+    , radiusCircle(Node::Radius)
+{
+    graph->scene()->addItem(this);    // сразу добавляет на сцену
+}
+
+QPointF EdgeCircle::peakArrow() const
+{
+    QPointF P0(mapFromScene(source->pos())), P1(centerPos());
+    qreal d = lineCC().length();
+    qreal a = (Node::Radius * Node::Radius - radiusCircle * radiusCircle + d * d) / (2 * d);
+    qreal h = sqrt(Node::Radius * Node::Radius - a * a);
+    QPointF P2   (P0.x() + a * (P1.x() - P0.x()) / d,
+                    P0.y() + a * (P1.y() - P0.y()) / d);
+    QPointF P3_1 (P2.x() - h * (P1.y() - P0.y()) / d,
+                    P2.y() + h * (P1.x() - P0.x()) / d);
+    return P3_1;
+}
+
+// Для столкновений и выделения
+QPainterPath EdgeCircle::shape() const {
+    QPainterPath path;
+    path.addEllipse(centerPos(),
+                        radiusCircle + 2, radiusCircle + 2);
+    return path;
+}
+
+// для отрисовки
+QRectF EdgeCircle::boundingRect() const
+{
+    QRectF rCircle = enoughBoundingRect(shape().boundingRect());
+    QRectF rArrow = enoughBoundingRect(arrowPolygon(peakArrow(), angleArrow()).boundingRect());
+    QRectF rPoint = enoughBoundingRect(pathPoint(handlePos()).boundingRect());
+    return rCircle.united(rArrow).united(rPoint);
+}
+
+void EdgeCircle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter->drawEllipse(static_cast<int>(centerPos().x() - radiusCircle),
+                     static_cast<int>(centerPos().y() - radiusCircle),
+                     2 * int(radiusCircle),
+                     2 * int(radiusCircle));
+    painter->setBrush((isSelected() ? Qt::cyan: Qt::black));
+    if (isSelected()) {
+        painter->drawEllipse(handlePos(), SIZE_POINT - 1, SIZE_POINT - 1);  // размер точки
+    }
+    painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter->drawPolygon(arrowPolygon(peakArrow(), angleArrow()));
+    NodeEdgeParent::paint(painter, option, widget);
+}
+
+QPointF EdgeCircle::handlePos() const
+{
+    QLineF lineToHandle;
+    lineToHandle.setP1(centerPos());
+    lineToHandle.setLength(radiusCircle);
+    lineToHandle.setAngle(lineCC().angle());
+    return lineToHandle.p2();
+}
+
+bool EdgeCircle::handlePress(QPointF posPress)
+{
+    QPainterPath p = pathPoint(handlePos());
+    return p.contains(posPress);
+}
+
+void EdgeCircle::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (handlePress(event->pos())) {
+        flHandlePress = true;
+        qDebug() << "handlePress true";
+    } else {
+        flHandlePress = false;
+        qDebug() << "handlePress false";
+    }
+    EdgeParent::mousePressEvent(event);
+}
+
+void EdgeCircle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+    if (flHandlePress) {
+        qreal previosRad = radiusCircle;
+        radiusCircle = QLineF(centerPos(), event->pos()).length();
+        if (!correctMove()) {
+            radiusCircle = previosRad;
+        }
+        update();
+    } else {
+        QPointF previosPos = pos();
+        EdgeParent::mouseMoveEvent(event);
+        if (!correctMove()) {
+            setPos(previosPos);
+        }
+    }
+}
+
+
+

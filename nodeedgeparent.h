@@ -26,15 +26,18 @@ public:
     NodeEdgeParent(GraphWidget *graphWidget);
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
-    virtual int id() const = 0;
+    int id() const;
     virtual void setTextContent(QString text) = 0;
     virtual QString textContent() const = 0;
-    virtual void writeToJson(QJsonObject &json) const = 0;
-    virtual void readFromJson(const QJsonObject &json) = 0;
+    virtual void writeToJson(QJsonObject &json) const;
+    virtual void readFromJson(const QJsonObject &json);
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     GraphWidget *graph;
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
+    int _id;
+    // область перерисовки с запасом
+    QRectF enoughBoundingRect(QRectF rect) const;
 };
 
 

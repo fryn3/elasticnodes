@@ -48,7 +48,7 @@ private:
     int connFlag;
 public:
     QList <Node*> nodes;
-    QList <Edge*> edges;
+    QList <EdgeParent*> edges;
     static FormGraph *openGraph(QString fileName, bool jsonFormat = false);
 signals:
 

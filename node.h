@@ -6,6 +6,7 @@
 #include <QString>
 #include "nodeedgeparent.h"
 class GraphWidget;
+class EdgeParent;
 class Edge;
 QT_BEGIN_NAMESPACE
 class QGraphicsSceneMouseEvent;
@@ -22,8 +23,8 @@ public:
     QString textContent() const override;
     void writeToJson(QJsonObject &json) const override;
     void readFromJson(const QJsonObject &json) override;
-    void addEdge(Edge *edge);
-    QList<Edge *> edges() const;
+    void addEdge(EdgeParent *edge);
+    QList<EdgeParent *> edges() const;
     enum { Type = NodeEdgeParent::Type + 1 };
     int type() const override { return Type; }
     enum { Radius = 40 };
@@ -32,11 +33,9 @@ public:
     QRectF boundingRect() const override;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     static int idStatic();
-    void removeEdge(Edge *edge);
-    int id() const override;
+    void removeEdge(EdgeParent *edge);
 protected:
-    int _id;
-    QList<Edge *> edgeList;
+    QList<EdgeParent *> edgeList;
     QPointF newPos;
     static int _idStatic;
     QString textInNode;  // который будет внутри вершины

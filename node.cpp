@@ -12,7 +12,7 @@ const QPen Node::_pen = QPen(Qt::black, 2);
 int Node::_idStatic = 0;
 
 Node::Node(GraphWidget *graphWidget, QString text)
-    : NodeEdgeParent(graphWidget), _id(_idStatic++)
+    : NodeEdgeParent(graphWidget)
 {
     setFlag(ItemIsSelectable);
     setFlag(ItemIsMovable);
@@ -32,7 +32,7 @@ Node::Node(GraphWidget *graphWidget, QString text)
 
 Node::~Node()
 {
-    foreach (Edge *edge, edgeList)
+    foreach (EdgeParent *edge, edgeList)
         delete edge;
 }
 
@@ -91,12 +91,12 @@ void Node::readFromJson(const QJsonObject &json)
     setTextContent(jsonN["textContent"].toString());
 }
 
-void Node::addEdge(Edge *edge)
+void Node::addEdge(EdgeParent *edge)
 {
     edgeList << edge;
 }
 
-QList<Edge *> Node::edges() const
+QList<EdgeParent *> Node::edges() const
 {
     return edgeList;
 }
@@ -130,8 +130,9 @@ QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     switch (change) {
     case ItemPositionHasChanged:
-        foreach (Edge *edge, edgeList)
+        foreach (EdgeParent *edge, edgeList) {
             edge->adjust();
+        }
         break;
     default:
         break;
@@ -145,19 +146,14 @@ int Node::idStatic()
     return _idStatic;
 }
 
-void Node::removeEdge(Edge *edge)
+void Node::removeEdge(EdgeParent *edge)
 {
-    QMutableListIterator<Edge *> iter(edgeList);
+    QMutableListIterator<EdgeParent *> iter(edgeList);
     while (iter.hasNext()) {
-        Edge *e = iter.next();
+        EdgeParent *e = iter.next();
         if (e == edge) {
             iter.remove();
             break;
         }
     }
-}
-
-int Node::id() const
-{
-    return _id;
 }

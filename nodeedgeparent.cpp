@@ -3,9 +3,27 @@
 #include <QPainter>
 class GraphWidget;
 
-NodeEdgeParent::NodeEdgeParent(GraphWidget *graphWidget): graph(graphWidget)
+NodeEdgeParent::NodeEdgeParent(GraphWidget *graphWidget)
+    : graph(graphWidget), _id(0)
 {
 
+}
+
+int NodeEdgeParent::id() const
+{
+    return _id;
+}
+
+void NodeEdgeParent::writeToJson(QJsonObject &json) const
+{
+    json["Type"] = type();
+}
+
+void NodeEdgeParent::readFromJson(const QJsonObject &json)
+{
+    if (missKey(json, "Type")) {
+        return;
+    }
 }
 
 void NodeEdgeParent::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -34,4 +52,12 @@ void NodeEdgeParent::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     Q_UNUSED(option);
     Q_UNUSED(widget);
 #endif
+}
+
+QRectF NodeEdgeParent::enoughBoundingRect(QRectF rect) const
+{
+    const qreal enough = 50;
+    rect.moveCenter(rect.center() - QPointF(enough, enough));
+    rect.setSize(rect.size() + QSizeF(2 * enough, 2 * enough));
+    return rect;
 }

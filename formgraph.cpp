@@ -474,9 +474,13 @@ void FormGraph::sceneSelectionChanged()
                 ui->lTip->setText("Выберите вершину куда будет проведена дуга.");
             } else if (connFlag == 2) {
                 // Нужно соединить с новой вершиной
-                Edge *e;
+                EdgeParent *e;
                 if (automat) {
-                    e = new Edge(_source, node, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                    if (_source == node) {
+                        e = new EdgeCircle(_source, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                    } else {
+                        e = new Edge(_source, node, (automat->t->type() == Automata::Mura::Type ? "x1" : "x1/y1"));
+                    }
                 } else {
                     e = new Edge(_source, node);
                 }
@@ -540,7 +544,7 @@ bool FormGraph::saveGraph(QString fileName, bool jsonFormat) const
         jsonNodes.append(json); });
     graphJson["nodes"] = jsonNodes;                  // nodes
     QJsonArray jsonEdges;
-    std::for_each(edges.begin(), edges.end(), [&] (Edge *e) {
+    std::for_each(edges.begin(), edges.end(), [&] (EdgeParent *e) {
         QJsonObject json;
         e->writeToJson(json);
         jsonEdges.append(json); });
@@ -549,6 +553,7 @@ bool FormGraph::saveGraph(QString fileName, bool jsonFormat) const
     saveFile.write(jsonFormat ?
                        saveDoc.toJson()
                      : saveDoc.toBinaryData());
+    saveFile.close();
     return true;
 }
 
@@ -578,7 +583,7 @@ FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
     });
     QJsonArray jsonEdges = json["edges"].toArray();
     std::for_each(jsonEdges.begin(), jsonEdges.end(), [&] (QJsonValue j) {
-        Edge *e = new Edge(j.toObject(), g->ui->grafViewScene);
+        EdgeParent *e = new Edge(j.toObject(), g->ui->grafViewScene);
         g->edges.append(e);
     });
 

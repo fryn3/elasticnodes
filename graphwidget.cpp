@@ -39,8 +39,6 @@ void GraphWidget::mousePressEvent(QMouseEvent *event){
             //qDebug()<<" Clicked right";
             emit GraphWidget::editItem();
         }
-
-
         break;
 
     default:
