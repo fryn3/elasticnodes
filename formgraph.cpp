@@ -71,8 +71,7 @@ void FormGraph::showInput()
         QGraphicsItem *it;
         it = ui->grafViewScene->scene()->selectedItems().at(0);
         //dlgInput->eInput->setEnabled(true);
-        if (it->type() == Node::Type) {
-            Node *n = qgraphicsitem_cast<Node *>(it);
+        if (Node *n = dynamic_cast<Node *>(it)) {
             if (automat) {
                 dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpNode()));
                 dlgInput->lTipInput->setText(automat->t->tipNode());
@@ -80,8 +79,7 @@ void FormGraph::showInput()
                 dlgInput->lTipInput->setText("Введите текст");
             }
             dlgInput->eInput->setText(n->textContent());
-        } else if (it->type() == EdgeParent::Type) {
-            EdgeParent *e = qgraphicsitem_cast<EdgeParent *>(it);
+        } else if (EdgeParent *e = dynamic_cast<EdgeParent *>(it)) {
             if (automat) {
                 dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpEdge()));
                 dlgInput->lTipInput->setText(automat->t->tipEdge());
@@ -153,7 +151,7 @@ void FormGraph::onBtnCreateNodeClicked()
 void FormGraph::onBtnConnectNodeClicked()
 {
     if (ui->grafViewScene->scene()->selectedItems().size() > 0) {
-        _source = qgraphicsitem_cast<Node *> (ui->grafViewScene->scene()->selectedItems().at(0));
+        _source = dynamic_cast<Node *> (ui->grafViewScene->scene()->selectedItems().at(0));
         if (_source) {
             ui->grafViewScene->scene()->clearSelection();
             ui->lTip->setText("Выберите, куда будет проведена дуга.");
@@ -178,24 +176,22 @@ void FormGraph::onBtnDeleteClicked()
     _source = nullptr;
     connFlag = 0;
     auto i = ui->grafViewScene->scene()->selectedItems().at(0);
-    if (i->type() == Node::Type) {
-        Node* n = qgraphicsitem_cast<Node*>(i);
+    if (Node* n = dynamic_cast<Node*>(i)) {
         if (n) {
             nodes.removeAll(n);
         } else {
-            qDebug() << "qgraphicsitem_cast returned 0";
+            qDebug() << "dynamic_cast returned 0";
         }
         if (nodes.size()==0){
             ui->btnCheck->setEnabled(false);
         }
         ui->btnCreateNode->setEnabled(true);
         ui->lTip->setText("Вершина удалена.");
-    } else if (i->type() == Edge::Type) {
-        Edge *e = qgraphicsitem_cast<Edge*>(i);
+    } else if (EdgeParent *e = dynamic_cast<EdgeParent*>(i)) {
         if (e) {
             edges.removeAll(e);
         } else {
-            qDebug() << "qgraphicsitem_cast returned 0";
+            qDebug() << "dynamic_cast returned 0";
         }
         ui->lTip->setText("Дуга удалена.");
 
@@ -463,8 +459,7 @@ void FormGraph::sceneSelectionChanged()
     QList<QGraphicsItem *> l = ui->grafViewScene->scene()->selectedItems();
     if (l.size() == 1) {
         ui->lTip->setText("Выделена вершина.");
-        Node *node = qgraphicsitem_cast<Node *>(l.at(0));
-        if (node) {
+        if (Node *node = dynamic_cast<Node *>(l.at(0))) {
             // Выделена вершина!
             ui->btnConnectNode->setEnabled(true);
             if (connFlag == 1) {
