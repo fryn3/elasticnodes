@@ -10,32 +10,31 @@ class GraphWidget;
 class EdgeParent : public NodeEdgeParent
 {
 protected:
-    EdgeParent(Node *sourceNode, Node *destNode = nullptr, QString textArrow = "");
+    EdgeParent(Node *sourceNode, Node *destNode = nullptr, QString text = nullptr);
     EdgeParent(GraphWidget *graphWidget);
 public:
     virtual ~EdgeParent() override;
     void setTextContent(QString text) override;
-    QString textContent() const override;
-    Node *sourceNode() const;
-    Node *destNode() const;
+    inline Node *sourceNode() const { return source; }
+    inline Node *destNode() const { return dest; }
     void adjust();
     enum { Type = NodeEdgeParent::Type + 2 };
     int type() const override { return Type; }
     QPainterPath pathPoint(QPointF point) const;
 protected:
-    QString textEdge;
     Node *source, *dest;
     qreal arrowSize;
     static int _idStatic;
     QPolygonF arrowPolygon(QPointF peak, qreal angle) const;
     virtual QPointF posText() const = 0;
+    QPainterPath pathText() const;
 };
 
 
 class Edge : public EdgeParent
 {
 public:
-    Edge(Node *sourceNode, Node *destNode = nullptr, QString textArrow = "");
+    Edge(Node *sourceNode, Node *destNode = nullptr, QString text = nullptr);
     Edge(const QJsonObject &json, GraphWidget *graphWidget);
 
     enum { Type = EdgeParent::Type + 1 };
@@ -58,8 +57,7 @@ protected:
 class EdgeCircle : public EdgeParent
 {
 public:
-    EdgeCircle(Node *sourceNode, QString textArrow = "");
-//    QPointF pointZero, pointZeroNode;
+    EdgeCircle(Node *sourceNode, QString text = nullptr);
     enum { Type = EdgeParent::Type + 2 };
     int type() const override { return Type; }
 protected:

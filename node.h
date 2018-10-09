@@ -16,11 +16,9 @@ class Node : public NodeEdgeParent
 {
 public:
     static const QPen _pen;
-    Node(GraphWidget *graphWidget, QString textInNode = "");
+    Node(GraphWidget *graphWidget, QString text = nullptr);
     virtual ~Node() override;
 
-    void setTextContent(QString text) override;
-    QString textContent() const override;
     void writeToJson(QJsonObject &json) const override;
     void readFromJson(const QJsonObject &json) override;
     void addEdge(EdgeParent *edge);
@@ -38,7 +36,6 @@ protected:
     QList<EdgeParent *> edgeList;
     QPointF newPos;
     static int _idStatic;
-    QString textInNode;  // который будет внутри вершины
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 

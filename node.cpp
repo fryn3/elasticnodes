@@ -12,7 +12,7 @@ const QPen Node::_pen = QPen(Qt::black, 2);
 int Node::_idStatic = 0;
 
 Node::Node(GraphWidget *graphWidget, QString text)
-    : NodeEdgeParent(graphWidget)
+    : NodeEdgeParent(graphWidget, text)
 {
     setFlag(ItemIsSelectable);
     setFlag(ItemIsMovable);
@@ -23,28 +23,12 @@ Node::Node(GraphWidget *graphWidget, QString text)
     setZValue(-10);
 #endif
     graph->scene()->addItem(this);    // сразу добавляет на сцену
-    if (text.isEmpty()) {
-        textInNode = QString("%1").arg(_id);
-    } else {
-        textInNode = text;
-    }
 }
 
 Node::~Node()
 {
     foreach (EdgeParent *edge, edgeList)
         delete edge;
-}
-
-void Node::setTextContent(QString text)
-{
-    textInNode = text;
-    update();
-}
-
-QString Node::textContent() const
-{
-    return textInNode;
 }
 
 void Node::writeToJson(QJsonObject &json) const
@@ -123,7 +107,7 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setPen(_pen);
     painter->drawEllipse(-Radius, -Radius, 2 * Radius, 2 * Radius);
     painter->setFont(QFont("Times", 12, QFont::Bold));
-    painter->drawText(boundingRect(), Qt::AlignCenter, textInNode);
+    painter->drawText(boundingRect(), Qt::AlignCenter, _textContent);
 }
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)

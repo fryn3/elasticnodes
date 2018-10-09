@@ -13,9 +13,8 @@
 const qreal PI = atan(1) * 4;
 int EdgeParent::_idStatic = 0;
 
-EdgeParent::EdgeParent(Node *sourceNode, Node *destNode, QString textArrow)
-    : NodeEdgeParent(sourceNode->graph),
-      textEdge(textArrow),
+EdgeParent::EdgeParent(Node *sourceNode, Node *destNode, QString text)
+    : NodeEdgeParent(sourceNode->graph, text),
       source(sourceNode), dest(destNode),
       arrowSize(15)
 {
@@ -57,23 +56,8 @@ EdgeParent::~EdgeParent()
 
 void EdgeParent::setTextContent(QString text)
 {
-    textEdge = text;
+    NodeEdgeParent::setTextContent(text);
     adjust();
-}
-
-QString EdgeParent::textContent() const
-{
-    return textEdge;
-}
-
-Node *EdgeParent::sourceNode() const
-{
-    return source;
-}
-
-Node *EdgeParent::destNode() const
-{
-    return dest;
 }
 
 void EdgeParent::adjust()
@@ -115,8 +99,22 @@ QPolygonF EdgeParent::arrowPolygon(QPointF peak, qreal angle) const
     return QPolygonF() << peak << l1.p2() << l2.p2();
 }
 
-Edge::Edge(Node *sourceNode, Node *destNode, QString textArrow)
-    : EdgeParent(sourceNode, destNode, textArrow)
+QPainterPath EdgeParent::pathText() const {
+    QPainterPath path;
+    QPointF textPoint = posText();
+    qreal x = textPoint.x();
+    qreal y = textPoint.y();
+    path.moveTo(x, y);
+    path.lineTo(x, y - 18); // for QFont("Times", 11)
+    path.lineTo(x + 8 * _textContent.size(), y - 18);
+    path.lineTo(x + 8 * _textContent.size(), y + 4);
+    path.lineTo(x, y + 4);
+    path.lineTo(x, y);
+    return path;
+}
+
+Edge::Edge(Node *sourceNode, Node *destNode, QString text)
+    : EdgeParent(sourceNode, destNode, text)
 {
     beforeLine.setPoints(source->pos(), dest->pos());   // от Источника до Получателя
     QLineF line1(source->pos(), dest->pos());
@@ -185,7 +183,7 @@ void Edge::readFromJson(const QJsonObject &json)
     if (_idStatic <= _id) {
         _idStatic = _id + 1;
     }
-    textEdge = jsonEdge["textContent"].toString();  // не вызывать setContent()
+    _textContent = jsonEdge["textContent"].toString();  // не вызывать setContent()
     int sourceId = jsonEdge["sourceId"].toInt();
     int destId = jsonEdge["destId"].toInt();
     uint fl = 0; // флаг нахождение двух вершин
@@ -236,7 +234,7 @@ QPointF Edge::posText() const
         line1.setLength(line1.length() - Node::Radius);
         qreal anglRad = line1.angle() * PI / 180;
         qreal widthText, hightText;
-        widthText = 8 * textEdge.size();
+        widthText = 8 * _textContent.size();
         hightText = 14;
         qreal lenLine1 = line1.length();
         if (line1.angle() > 0 && line1.angle() <= 90) {
@@ -289,7 +287,7 @@ QPointF Edge::posText() const
     return textPoint;
 }
 
-QPainterPath Edge::pathBezierCurve() const {    // + text
+QPainterPath Edge::pathBezierCurve() const {
     QPainterPath path;
     qreal qOffset = 5;
     QPointF newBezier = newPosBezier();
@@ -310,25 +308,16 @@ QPainterPath Edge::pathBezierCurve() const {    // + text
                  newBezier - (offset0 + offset1) / 2,
                  mapFromScene(source->pos()) - offset0);
     path.lineTo(mapFromScene(source->pos()) + offset0);
-    // Text
-    QPointF textPoint = posText();
-    qreal x = textPoint.x();
-    qreal y = textPoint.y();
-    path.moveTo(x, y);
-    path.lineTo(x, y - 18); // for QFont("Times", 11)
-    path.lineTo(x + 8 * textEdge.size(), y - 18);
-    path.lineTo(x + 8 * textEdge.size(), y + 4);
-    path.lineTo(x, y + 4);
-    path.lineTo(x, y);
     return path;
 }
 
 // Для столкновений и выделения
 QPainterPath Edge::shape() const {
     QPainterPath path;
+    path.setFillRule(Qt::WindingFill);
     if (source != dest) {
         if (!isSelected()) {
-            path = pathBezierCurve();
+            path = pathBezierCurve().united(pathText());
         } else {
             path = pathPoint(newPosBezier());
         }
@@ -351,8 +340,8 @@ QRectF Edge::boundingRect() const
         qreal y = textPoint.y();
         pText << QPointF(x, y)
               << QPointF(x, y - 18) // for QFont("Times", 11)
-              << QPointF(x + 8 * textEdge.size(), y - 18)
-              << QPointF(x + 8 * textEdge.size(), y + 4)
+              << QPointF(x + 8 * _textContent.size(), y - 18)
+              << QPointF(x + 8 * _textContent.size(), y + 4)
               << QPointF(x, y + 4);
         QPolygonF pBezier;
         pBezier << bezier + QPointF(-1, -1)
@@ -414,7 +403,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->drawPolygon(arrowPolygon(peak, line.angle()));
     painter->setFont(QFont("Times", 11));
-    painter->drawText(posText(), textEdge);
+    painter->drawText(posText(), _textContent);
     if (isSelected()) {
         painter->drawEllipse(bezierPaint, SIZE_POINT - 1, SIZE_POINT - 1);  // размер точки
     }
@@ -447,8 +436,8 @@ QVariant Edge::itemChange(GraphicsItemChange change, const QVariant &value)
     return QGraphicsItem::itemChange(change, value);
 }
 
-EdgeCircle::EdgeCircle(Node *sourceNode, QString textArrow)
-    : EdgeParent (sourceNode, sourceNode, textArrow)
+EdgeCircle::EdgeCircle(Node *sourceNode, QString text)
+    : EdgeParent (sourceNode, sourceNode, text)
     , radiusCircle(Node::Radius)
 {
     graph->scene()->addItem(this);    // сразу добавляет на сцену
@@ -469,10 +458,14 @@ QPointF EdgeCircle::peakArrow() const
 
 // Для столкновений и выделения
 QPainterPath EdgeCircle::shape() const {
-    QPainterPath path;
-    path.addEllipse(centerPos(),
+    QPainterPath path1;
+    path1.addEllipse(centerPos(),
                         radiusCircle + 2, radiusCircle + 2);
-    return path;
+    QPainterPath path2;
+    path2.addEllipse(centerPos(),
+                        radiusCircle - 2, radiusCircle - 2);
+    QPainterPath path3 = path1.subtracted(path2);
+    return path3.united(pathText());
 }
 
 // для отрисовки
@@ -498,7 +491,7 @@ void EdgeCircle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
     painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->drawPolygon(arrowPolygon(peakArrow(), angleArrow()));
     painter->setFont(QFont("Times", 11));
-    painter->drawText(posText(), textEdge);
+    painter->drawText(posText(), _textContent);
     NodeEdgeParent::paint(painter, option, widget);
 }
 
@@ -519,13 +512,7 @@ bool EdgeCircle::handlePress(QPointF posPress)
 
 void EdgeCircle::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (handlePress(event->pos())) {
-        flHandlePress = true;
-        qDebug() << "handlePress true";
-    } else {
-        flHandlePress = false;
-        qDebug() << "handlePress false";
-    }
+    flHandlePress = handlePress(event->pos());
     EdgeParent::mousePressEvent(event);
 }
 
@@ -549,11 +536,11 @@ void EdgeCircle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 QPointF EdgeCircle::posText() const
 {
-    QLineF l1(boundingRect().center(), peakArrow());
+    QLineF l1(centerPos(), peakArrow());
     QLineF l2(mapFromScene(source->pos()), l1.center());
     qreal anglRad = l2.angle() * PI / 180;
     qreal widthText, hightText;
-    widthText = 8 * textEdge.size();
+    widthText = 8 * _textContent.size();
     hightText = 14;
     if (0 <= l2.angle() && l2.angle() < 180) {
         l2.setAngle(l2.angle() + 5);
