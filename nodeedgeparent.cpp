@@ -3,15 +3,24 @@
 #include <QPainter>
 class GraphWidget;
 
-NodeEdgeParent::NodeEdgeParent(GraphWidget *graphWidget)
-    : graph(graphWidget), _id(0)
+NodeEdgeParent::NodeEdgeParent(GraphWidget *graphWidget, QString text)
+    : graph(graphWidget), _textContent(text), _id(0)
 {
-
+    if (text.isEmpty()) {
+        _textContent = QString("%1").arg(_id);
+    } else {
+        _textContent = text;
+    }
 }
 
 int NodeEdgeParent::id() const
 {
     return _id;
+}
+
+void NodeEdgeParent::setTextContent(QString text) {
+    _textContent = text;
+    update();
 }
 
 void NodeEdgeParent::writeToJson(QJsonObject &json) const
@@ -30,8 +39,8 @@ void NodeEdgeParent::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (event->button() == Qt::RightButton) {
         qDebug() << "RightButton";
-        scene()->clearSelection();
-        setSelected(true);
+//        scene()->clearSelection();
+//        setSelected(true);
 //        emit graph->editItem();
     }
     QGraphicsItem::mousePressEvent(event);

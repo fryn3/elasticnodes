@@ -23,17 +23,18 @@ class GraphWidget;
 class NodeEdgeParent : public QGraphicsItem
 {
 public:
-    NodeEdgeParent(GraphWidget *graphWidget);
+    NodeEdgeParent(GraphWidget *graphWidget, QString text = nullptr);
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
     int id() const;
-    virtual void setTextContent(QString text) = 0;
-    virtual QString textContent() const = 0;
+    virtual void setTextContent(QString text);
+    virtual QString textContent() const { return _textContent; }
     virtual void writeToJson(QJsonObject &json) const;
     virtual void readFromJson(const QJsonObject &json);
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     GraphWidget *graph;
 protected:
+    QString _textContent;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     int _id;
     // область перерисовки с запасом
