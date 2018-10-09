@@ -28,6 +28,7 @@ protected:
     qreal arrowSize;
     static int _idStatic;
     QPolygonF arrowPolygon(QPointF peak, qreal angle) const;
+    virtual QPointF posText() const = 0;
 };
 
 
@@ -49,7 +50,7 @@ protected:
     QPainterPath shape() const override;    // Для столкновений и выделения
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     QPointF newPosBezier() const;
-    QPointF newPosText() const;
+    QPointF posText() const override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
     QPainterPath pathBezierCurve() const;
 };
@@ -79,6 +80,7 @@ protected:
     }
     QPointF peakArrow() const;
     inline qreal angleArrow() const { return QLineF(centerPos(), peakArrow()).angle() - 83; }
+    QPointF posText() const override;
 };
 
 #endif // EDGE_H

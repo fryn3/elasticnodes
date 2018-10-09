@@ -225,7 +225,7 @@ void Edge::readFromJson(const QJsonObject &json)
                        jsonLine["p2x"].toDouble(), jsonLine["p2y"].toDouble());
 }
 
-QPointF Edge::newPosText() const
+QPointF Edge::posText() const
 {
     QPointF textPoint;
     if(source != dest) {
@@ -311,7 +311,7 @@ QPainterPath Edge::pathBezierCurve() const {    // + text
                  mapFromScene(source->pos()) - offset0);
     path.lineTo(mapFromScene(source->pos()) + offset0);
     // Text
-    QPointF textPoint = newPosText();
+    QPointF textPoint = posText();
     qreal x = textPoint.x();
     qreal y = textPoint.y();
     path.moveTo(x, y);
@@ -346,7 +346,7 @@ QRectF Edge::boundingRect() const
         return QRectF();
     if (source != dest) {
         QPolygonF pText;
-        QPointF textPoint = newPosText();
+        QPointF textPoint = posText();
         qreal x = textPoint.x();
         qreal y = textPoint.y();
         pText << QPointF(x, y)
@@ -414,7 +414,7 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->drawPolygon(arrowPolygon(peak, line.angle()));
     painter->setFont(QFont("Times", 11));
-    painter->drawText(newPosText(), textEdge);
+    painter->drawText(posText(), textEdge);
     if (isSelected()) {
         painter->drawEllipse(bezierPaint, SIZE_POINT - 1, SIZE_POINT - 1);  // размер точки
     }
@@ -497,6 +497,8 @@ void EdgeCircle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
     }
     painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->drawPolygon(arrowPolygon(peakArrow(), angleArrow()));
+    painter->setFont(QFont("Times", 11));
+    painter->drawText(posText(), textEdge);
     NodeEdgeParent::paint(painter, option, widget);
 }
 
@@ -545,5 +547,27 @@ void EdgeCircle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     }
 }
 
+QPointF EdgeCircle::posText() const
+{
+    QLineF l1(boundingRect().center(), peakArrow());
+    QLineF l2(mapFromScene(source->pos()), l1.center());
+    qreal anglRad = l2.angle() * PI / 180;
+    qreal widthText, hightText;
+    widthText = 8 * textEdge.size();
+    hightText = 14;
+    if (0 <= l2.angle() && l2.angle() < 180) {
+        l2.setAngle(l2.angle() + 5);
+    }
 
+    if ((0 <= l2.angle() && l2.angle() < 90)) {
+        l2.setLength(Node::Radius + 3);
+    } else if (90 <= l2.angle() && l2.angle() < 180) {
+        l2.setLength(Node::Radius + 3 + widthText * (-cos(anglRad)));
+    } else if (180 <= l2.angle() && l2.angle() < 270) {
+        l2.setLength(Node::Radius + 3 + widthText *(-cos(anglRad)) + hightText * (-sin(anglRad)));
+    } else if (270 <= l2.angle() && l2.angle() < 360) {
+        l2.setLength(Node::Radius + 3 + hightText * (-sin(anglRad)));
+    }
+    return l2.p2();
+}
 
