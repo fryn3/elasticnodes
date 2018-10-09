@@ -80,8 +80,8 @@ void FormGraph::showInput()
                 dlgInput->lTipInput->setText("Введите текст");
             }
             dlgInput->eInput->setText(n->textContent());
-        } else if (it->type() == Edge::Type) {
-            Edge *e = qgraphicsitem_cast<Edge *>(it);
+        } else if (it->type() == EdgeParent::Type) {
+            EdgeParent *e = qgraphicsitem_cast<EdgeParent *>(it);
             if (automat) {
                 dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpEdge()));
                 dlgInput->lTipInput->setText(automat->t->tipEdge());
