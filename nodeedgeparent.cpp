@@ -3,8 +3,8 @@
 #include <QPainter>
 class GraphWidget;
 
-NodeEdgeParent::NodeEdgeParent(GraphWidget *graphWidget, QString text)
-    : graph(graphWidget), _textContent(text), _id(0)
+NodeEdgeParent::NodeEdgeParent(GraphWidget *graphWidget, int id, QString text)
+    : graph(graphWidget), _textContent(text), _id(id)
 {
     if (text.isEmpty()) {
         _textContent = QString("%1").arg(_id);
@@ -25,14 +25,24 @@ void NodeEdgeParent::setTextContent(QString text) {
 
 void NodeEdgeParent::writeToJson(QJsonObject &json) const
 {
-    json["Type"] = type();
+    QJsonObject jsonIt;
+    jsonIt["Type"] = type();
+    jsonIt["id"] = _id;
+    jsonIt["textContent"] = _textContent;
+    json["Item"] = jsonIt;
 }
 
 void NodeEdgeParent::readFromJson(const QJsonObject &json)
 {
-    if (missKey(json, "Type")) {
+    if (missKey(json, "Item")) {
         return;
     }
+    QJsonObject jsonIt = json["Item"].toObject();
+    if (missKeys(jsonIt, QStringList { "Type", "id", "textContent" })) {
+        return;
+    }
+    _id = jsonIt["id"].toInt();  // check idStatic todo in derived
+    _textContent = jsonIt["textContent"].toString();
 }
 
 void NodeEdgeParent::mousePressEvent(QGraphicsSceneMouseEvent *event)

@@ -63,7 +63,7 @@ public slots:
     void onBtnApplyClicked();
     void onBtnCheckClicked();
     void sceneSelectionChanged();
-    void sceneSave();
+    void savePng();
     void dropEvent(QDropEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
     void checkedTable();

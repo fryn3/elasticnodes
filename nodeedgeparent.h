@@ -4,18 +4,10 @@
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
-#include <QJsonObject>
-#include <QJsonArray>
 #include <QDebug>
-//#define DEBUG_NODE_EDGE
+#include "jsonfuncs.h"
 
-inline bool missKey(const QJsonObject &json, QString key) {
-    if (!json.contains(key)) {
-        qWarning() << "QJsonObject не содержит " << key;
-        return true;
-    }
-    return false;
-}
+//#define DEBUG_NODE_EDGE
 
 class GraphWidget;
 
@@ -23,7 +15,7 @@ class GraphWidget;
 class NodeEdgeParent : public QGraphicsItem
 {
 public:
-    NodeEdgeParent(GraphWidget *graphWidget, QString text = nullptr);
+    NodeEdgeParent(GraphWidget *graphWidget, int id, QString text = nullptr);
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
     int id() const;

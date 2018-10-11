@@ -507,7 +507,7 @@ void FormGraph::sceneSelectionChanged()
     }
 }
 
-void FormGraph::sceneSave()
+void FormGraph::savePng()
 {
     QPixmap pixMap = QPixmap::grabWidget(ui->grafViewScene);
     pixMap.save("OutFile.png");
@@ -530,8 +530,8 @@ bool FormGraph::saveGraph(QString fileName, bool jsonFormat) const
         return false;
     }
     QJsonObject graphJson;
-    automat->writeToJson(graphJson);                                                                // automat
-    ui->grafViewScene->writeToJson(graphJson);                                                      // scene
+    automat->writeToJson(graphJson);                            // automat
+    ui->grafViewScene->writeToJson(graphJson);                  // scene
     QJsonArray jsonNodes;
     std::for_each(nodes.begin(), nodes.end(), [&] (Node *n) {
         QJsonObject json;
@@ -566,7 +566,7 @@ FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
     FormGraph *g = new FormGraph;
     g->CreateAutomat(Automata::Universal::readFromJson(json));      // Automat
     g->ui->grafViewScene->readFromJson(json);                       // scene
-    if (missKey(json, "nodes") || missKey(json, "edges")) {
+    if (missKeys(json, QStringList { "nodes", "edges" })) {
         delete g;
         return nullptr;
     }
@@ -578,7 +578,7 @@ FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
     });
     QJsonArray jsonEdges = json["edges"].toArray();
     std::for_each(jsonEdges.begin(), jsonEdges.end(), [&] (QJsonValue j) {
-        EdgeParent *e = new Edge(j.toObject(), g->ui->grafViewScene);
+        EdgeParent *e = EdgeParent::create(j.toObject(), g->ui->grafViewScene);
         g->edges.append(e);
     });
 

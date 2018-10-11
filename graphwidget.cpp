@@ -145,26 +145,24 @@ void GraphWidget::writeToJson(QJsonObject &json) const
 
 void GraphWidget::readFromJson(const QJsonObject &json)
 {
-    if (json.contains("GraphWidget") && json["GraphWidget"].isObject()) {
-        QJsonObject jsonWid = json["GraphWidget"].toObject();
-        if (jsonWid.contains("scale") && jsonWid["scale"].isArray()) {
-            QJsonArray jsonArray = jsonWid["scale"].toArray();
-            QTransform tr(jsonArray.at(0).toDouble(),
-                          jsonArray.at(1).toDouble(),
-                          jsonArray.at(2).toDouble(),
-                          jsonArray.at(3).toDouble(),
-                          jsonArray.at(4).toDouble(),
-                          jsonArray.at(5).toDouble(),
-                          jsonArray.at(6).toDouble(),
-                          jsonArray.at(7).toDouble(),
-                          jsonArray.at(8).toDouble());
-            setTransform(tr);
-        } else {
-            qDebug() << "QJsonObject не содержит scale";
-        }
-    } else {
-        qDebug() << "QJsonObject не содержит GraphWidget";
+    if (missKey(json, "GraphWidget")) {
+        return;
     }
+    QJsonObject jsonWid = json["GraphWidget"].toObject();
+    if (missKey(jsonWid, "scale") && !jsonWid["scale"].isArray()) {
+        return;
+    }
+    QJsonArray jsonArray = jsonWid["scale"].toArray();
+    QTransform tr(jsonArray.at(0).toDouble(),
+                  jsonArray.at(1).toDouble(),
+                  jsonArray.at(2).toDouble(),
+                  jsonArray.at(3).toDouble(),
+                  jsonArray.at(4).toDouble(),
+                  jsonArray.at(5).toDouble(),
+                  jsonArray.at(6).toDouble(),
+                  jsonArray.at(7).toDouble(),
+                  jsonArray.at(8).toDouble());
+    setTransform(tr);
 }
 
 void GraphWidget::mouseReleaseEvent(QMouseEvent *event){

@@ -21,6 +21,9 @@ public:
     enum { Type = NodeEdgeParent::Type + 2 };
     int type() const override { return Type; }
     QPainterPath pathPoint(QPointF point) const;
+    void writeToJson(QJsonObject &json) const override;
+    void readFromJson(const QJsonObject &json) override;
+    static EdgeParent *create(const QJsonObject &json, GraphWidget *graphWidget);
 protected:
     Node *source, *dest;
     qreal arrowSize;
@@ -60,6 +63,9 @@ public:
     EdgeCircle(Node *sourceNode, QString text = nullptr);
     enum { Type = EdgeParent::Type + 2 };
     int type() const override { return Type; }
+    void writeToJson(QJsonObject &json) const override;
+    void readFromJson(const QJsonObject &json) override;
+    EdgeCircle(const QJsonObject &json, GraphWidget *graphWidget);
 protected:
     qreal radiusCircle;
     QRectF boundingRect() const override;   // Для отрисовки

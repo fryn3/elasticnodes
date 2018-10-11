@@ -4,8 +4,7 @@
 #include <QVector>
 #include <QList>
 #include <QMultiMap>
-#include <QJsonObject>
-#include <QJsonArray>
+#include "jsonfuncs.h"
 
 
 inline QStringList listNums(QString str) { return str.split(QRegExp("[^0-9]"), QString::SkipEmptyParts); }

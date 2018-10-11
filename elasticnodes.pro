@@ -8,7 +8,8 @@ HEADERS += \
     nodeedgeparent.h \
     dlginput.h \
     formgraph.h \
-    mainwindow.h
+    mainwindow.h \
+    jsonfuncs.h
 
 SOURCES += \
         edge.cpp \

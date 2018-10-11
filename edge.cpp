@@ -14,11 +14,10 @@ const qreal PI = atan(1) * 4;
 int EdgeParent::_idStatic = 0;
 
 EdgeParent::EdgeParent(Node *sourceNode, Node *destNode, QString text)
-    : NodeEdgeParent(sourceNode->graph, text),
+    : NodeEdgeParent(sourceNode->graph, _idStatic++, text),
       source(sourceNode), dest(destNode),
       arrowSize(15)
 {
-    _id = _idStatic++;
     if (!dest) {
         dest = source;
     }
@@ -32,15 +31,15 @@ EdgeParent::EdgeParent(Node *sourceNode, Node *destNode, QString text)
 }
 
 EdgeParent::EdgeParent(GraphWidget *graphWidget)
-    : NodeEdgeParent(graphWidget),
+    : NodeEdgeParent(graphWidget, 0),
       arrowSize(15)
 {
 //    readFromJson(json);
     setFlag(ItemIsSelectable);
-    source->addEdge(this);
-    if (source != dest) {
-        dest->addEdge(this);
-    }
+//    source->addEdge(this);
+//    if (source != dest) {
+//        dest->addEdge(this);
+//    }
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
 //    adjust();
@@ -87,6 +86,61 @@ QPainterPath EdgeParent::pathPoint(QPointF point) const {
     path.lineTo(point + QPointF(-SIZE_POINT, SIZE_POINT));
     path.lineTo(point + QPointF(-SIZE_POINT, -SIZE_POINT));
     return path;
+}
+
+void EdgeParent::writeToJson(QJsonObject &json) const
+{
+    NodeEdgeParent::writeToJson(json);
+    QJsonObject jsonIt = json["Item"].toObject();
+    jsonIt["sourceId"] = source->id();
+    jsonIt["destId"] = dest->id();
+    json["Item"] = jsonIt;
+}
+
+void EdgeParent::readFromJson(const QJsonObject &json) {
+    NodeEdgeParent::readFromJson(json);
+    if (_idStatic <= _id) {
+        _idStatic = _id + 1;
+    }
+    QJsonObject jsonIt = json["Item"].toObject();
+    if (missKeys(jsonIt, QStringList { "sourceId", "destId"})) {
+        return;
+    }
+    int sourceId = jsonIt["sourceId"].toInt();
+    int destId = jsonIt["destId"].toInt();
+    uint fl = 0; // флаг нахождение двух вершин
+    for(auto it: graph->scene()->items()) {
+        Node *n = dynamic_cast<Node*>(it);
+        if (n) {
+            if (n->id() == sourceId) {
+                source = n;
+                source->addEdge(this);
+                fl |= 1;
+            }
+            if (n->id() == destId) {
+                dest = n;
+                dest->addEdge(this);  // проверка о повторении в addEdge
+                fl |= 2;
+            }
+            if (fl == 3) {  // 2 флага подняты
+                break;
+            }
+        }
+    }
+    if (fl != 3) {
+        qDebug() << "fl != 3";
+    }
+}
+
+EdgeParent *EdgeParent::create(const QJsonObject &json, GraphWidget *graphWidget)
+{
+    QJsonObject jsonIt = json["Item"].toObject();
+    if (jsonIt["Type"].toInt() == Edge::Type) {
+        return new Edge(json, graphWidget);
+    } else if (jsonIt["Type"].toInt() == EdgeCircle::Type) {
+        return new EdgeCircle(json, graphWidget);
+    }
+    return nullptr;
 }
 
 QPolygonF EdgeParent::arrowPolygon(QPointF peak, qreal angle) const
@@ -145,17 +199,14 @@ Edge::Edge(const QJsonObject &json, GraphWidget *graphWidget)
 
 void Edge::writeToJson(QJsonObject &json) const
 {
-    QJsonObject jsonEdge;
-    jsonEdge["id"] = _id;
-    jsonEdge["textContent"] = textContent();
-    jsonEdge["sourceId"] = source->id();
-    jsonEdge["destId"] = dest->id();
+    EdgeParent::writeToJson(json);
+    QJsonObject jsonIt = json["Item"].toObject();
     QJsonObject jsonBezier
     {
         {"x", bezier.x()},
         {"y", bezier.y()}
     };
-    jsonEdge["Bezier"] = jsonBezier;
+    jsonIt["Bezier"] = jsonBezier;
     QJsonObject jsonLine
     {
             {"p1x", beforeLine.p1().x()},
@@ -163,60 +214,28 @@ void Edge::writeToJson(QJsonObject &json) const
             {"p2x", beforeLine.p2().x()},
             {"p2y", beforeLine.p2().y()},
     };
-    jsonEdge["line"] = jsonLine;
-
-    json["Edge"] = jsonEdge;
+    jsonIt["line"] = jsonLine;
+    json["Item"] = jsonIt;
 }
 
 void Edge::readFromJson(const QJsonObject &json)
 {
-    if (missKey(json, "Edge")) {
+    EdgeParent::readFromJson(json);
+    QJsonObject jsonIt = json["Item"].toObject();
+    if (missKeys(jsonIt, QStringList { "Bezier", "line" })) {
         return;
     }
-    QJsonObject jsonEdge = json["Edge"].toObject();
-    if (missKey(jsonEdge, "id") || missKey(jsonEdge, "textContent")
-            || missKey(jsonEdge, "sourceId") || missKey(jsonEdge, "destId")
-            || missKey(jsonEdge, "Bezier") || missKey(jsonEdge, "line")) {
-        return;
-    }
-    _id = int(jsonEdge["id"].toDouble());
-    if (_idStatic <= _id) {
-        _idStatic = _id + 1;
-    }
-    _textContent = jsonEdge["textContent"].toString();  // не вызывать setContent()
-    int sourceId = jsonEdge["sourceId"].toInt();
-    int destId = jsonEdge["destId"].toInt();
-    uint fl = 0; // флаг нахождение двух вершин
-    for(auto it: graph->scene()->items()) {
-        Node *n = dynamic_cast<Node*>(it);
-        if (n) {
-            if (n->id() == sourceId) {
-                source = n;
-                fl |= 1;
-            }
-            if (n->id() == destId) {
-                dest = n;
-                fl |= 2;
-            }
-            if (fl == 3) {  // 2 флага подняты
-                break;
-            }
-        }
-    }
-    if (fl != 3) {
-        qDebug() << "fl != 3";
-    }
-    QJsonObject jsonBezier = jsonEdge["Bezier"].toObject();
-    if (missKey(jsonBezier, "x") || missKey(jsonBezier, "y")) {
+    QJsonObject jsonBezier = jsonIt["Bezier"].toObject();
+    if (missKeys(jsonBezier, QStringList { "x", "y" })) {
         return;
     }
     double x = jsonBezier["x"].toDouble();
     double y = jsonBezier["y"].toDouble();
     bezier.setX(x);
     bezier.setY(y);
-    QJsonObject jsonLine = jsonEdge["line"].toObject();
-    if (missKey(jsonLine, "p1x") || missKey(jsonLine, "p1y")
-            || missKey(jsonLine, "p2x") || missKey(jsonLine, "p2y")) {
+    QJsonObject jsonLine = jsonIt["line"].toObject();
+    if (missKeys(jsonLine,
+                QStringList { "p1x", "p1y", "p2x", "p2y" })) {
         return;
     }
     beforeLine.setLine(jsonLine["p1x"].toDouble(), jsonLine["p1y"].toDouble(),
@@ -441,6 +460,45 @@ EdgeCircle::EdgeCircle(Node *sourceNode, QString text)
     , radiusCircle(Node::Radius)
 {
     graph->scene()->addItem(this);    // сразу добавляет на сцену
+}
+
+EdgeCircle::EdgeCircle(const QJsonObject &json, GraphWidget *graphWidget)
+    : EdgeParent(graphWidget)
+{
+    readFromJson(json);
+    adjust();
+    graph->scene()->addItem(this);    // сразу добавляет на сцену
+}
+
+void EdgeCircle::writeToJson(QJsonObject &json) const
+{
+    EdgeParent::writeToJson(json);
+    QJsonObject jsonIt = json["Item"].toObject();
+    jsonIt["radiusCircle"] = radiusCircle;
+    QJsonObject jsonPos
+    {
+        {"x", pos().x()},
+        {"y", pos().y()}
+    };
+    jsonIt["pos"] = jsonPos;
+    json["Item"] = jsonIt;
+}
+
+void EdgeCircle::readFromJson(const QJsonObject &json)
+{
+    EdgeParent::readFromJson(json);
+    QJsonObject jsonIt = json["Item"].toObject();
+    if (missKeys(jsonIt, QStringList { "radiusCircle", "pos" })) {
+        return;
+    }
+    radiusCircle = jsonIt["radiusCircle"].toDouble();
+    QJsonObject jsonPos = jsonIt["pos"].toObject();
+    if (missKeys(jsonPos, QStringList { "x", "y" })) {
+        return;
+    }
+    double x = jsonPos["x"].toDouble();
+    double y = jsonPos["y"].toDouble();
+    setPos(x, y);
 }
 
 QPointF EdgeCircle::peakArrow() const

@@ -37,23 +37,19 @@ Universal::Universal(QStringList data) : t(nullptr), f(nullptr) {
 
 Universal *Universal::readFromJson(const QJsonObject &json)
 {
-    if (json.contains("Automat") && json["Automat"].isObject()) {
-        QJsonObject jsonA = json["Automat"].toObject();
-        if (jsonA.contains("source") && jsonA["source"].isArray()) {
-            QStringList source;
-            QJsonArray jsonArray = jsonA["source"].toArray();
-            foreach (auto obj, jsonArray) {
-                source.append(obj.toString());
-            }
-            return new Universal(source);
-        } else {
-            qDebug() << "QJsonObject не содержит source";
-            return nullptr;
-        }
-    } else {
-        qDebug() << "QJsonObject не содержит Automat";
+    if (!missKey(json, "Automat") || !json["Automat"].isObject()) {
         return nullptr;
     }
+    QJsonObject jsonA = json["Automat"].toObject();
+    if (!missKey(jsonA, "source") || !jsonA["source"].isArray()) {
+        return nullptr;
+    }
+    QStringList source;
+    QJsonArray jsonArray = jsonA["source"].toArray();
+    foreach (auto obj, jsonArray) {
+        source.append(obj.toString());
+    }
+    return new Universal(source);
 }
 
 void Universal::writeToJson(QJsonObject &json) const
