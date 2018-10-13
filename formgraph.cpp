@@ -176,9 +176,6 @@ void FormGraph::onBtnDeleteClicked()
             } else {
                 qDebug() << "dynamic_cast returned 0";
             }
-            if (nodes.size()==0){
-                ui->btnCheck->setEnabled(false);
-            }
             ui->btnCreateNode->setEnabled(true);
             ui->lTip->setText("Вершина удалена.");
         } else if (EdgeParent *e = dynamic_cast<EdgeParent*>(i)) {
@@ -595,6 +592,6 @@ FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
         EdgeParent *e = EdgeParent::create(j.toObject(), g->ui->grafViewScene);
         g->edges.append(e);
     });
-
+    g->ui->btnCheck->setEnabled(true);
     return g;
 }
