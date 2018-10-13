@@ -171,6 +171,9 @@ void FormGraph::onBtnDeleteClicked()
         connFlag = 0;
         auto i = ui->grafViewScene->scene()->selectedItems().at(0);
         if (Node* n = dynamic_cast<Node*>(i)) {
+            foreach (auto e, n->edges()) {
+                edges.removeAll(e);
+            }
             if (n) {
                 nodes.removeAll(n);
             } else {
