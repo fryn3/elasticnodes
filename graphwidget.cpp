@@ -36,7 +36,6 @@ void GraphWidget::mousePressEvent(QMouseEvent *event){
     switch(event->button()){
     case Qt::RightButton:
         if (scene()->selectedItems().size()>0){
-            //qDebug()<<" Clicked right";
             emit GraphWidget::editItem();
         }
         break;
@@ -50,26 +49,26 @@ void GraphWidget::mousePressEvent(QMouseEvent *event){
 
 void GraphWidget::keyPressEvent(QKeyEvent *event)
 {
-    Node *selectedNode = nullptr;
+    NodeEdgeParent *selectedItem = nullptr;
     if (scene()->selectedItems().size() == 1) {
-        selectedNode = qgraphicsitem_cast<Node *> (scene()->selectedItems().at(0));
+        selectedItem = dynamic_cast<NodeEdgeParent *> (scene()->selectedItems().at(0));
     }
     switch (event->key()) {
     case Qt::Key_Up:
-        if (selectedNode)
-            selectedNode->moveBy(0, -20);
+        if (selectedItem)
+            selectedItem->moveBy(0, -20);
         break;
     case Qt::Key_Down:
-        if (selectedNode)
-            selectedNode->moveBy(0, 20);
+        if (selectedItem)
+            selectedItem->moveBy(0, 20);
         break;
     case Qt::Key_Left:
-        if (selectedNode)
-            selectedNode->moveBy(-20, 0);
+        if (selectedItem)
+            selectedItem->moveBy(-20, 0);
         break;
     case Qt::Key_Right:
-        if (selectedNode)
-            selectedNode->moveBy(20, 0);
+        if (selectedItem)
+            selectedItem->moveBy(20, 0);
         break;
     case Qt::Key_Plus:
         zoomIn();
@@ -78,18 +77,16 @@ void GraphWidget::keyPressEvent(QKeyEvent *event)
         zoomOut();
         break;
     case Qt::Key_Space:
-    case Qt::Key_Enter:
         shuffle();
         break;
-
     case Qt::RightButton:
         //emit editItem();
         //QGraphicsView::keyPressEvent(event);
         break;
     default:
-
-        QGraphicsView::keyPressEvent(event);
+        break;
     }
+    QGraphicsView::keyPressEvent(event);
 }
 
 #if QT_CONFIG(wheelevent)

@@ -33,8 +33,8 @@ class FormGraph : public QWidget
 
 public:
     explicit FormGraph(QWidget *parent = nullptr);
-    ~FormGraph();
-    void closeEvent(QCloseEvent *event);
+    ~FormGraph() override;
+    void closeEvent(QCloseEvent *event) override;
     Automata::Universal *automat;
 
 private:
@@ -63,12 +63,11 @@ public slots:
     void onBtnApplyClicked();
     void onBtnCheckClicked();
     void sceneSelectionChanged();
-    void savePng();
-    void dropEvent(QDropEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
+    void savePng(QString fileName) const;
     void checkedTable();
     void checkedMatrixStr();
     bool saveGraph(QString fileName, bool jsonFormat = false) const;
+    void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // FORMGRAPH_H

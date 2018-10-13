@@ -34,16 +34,9 @@ EdgeParent::EdgeParent(GraphWidget *graphWidget)
     : NodeEdgeParent(graphWidget, 0),
       arrowSize(15)
 {
-//    readFromJson(json);
     setFlag(ItemIsSelectable);
-//    source->addEdge(this);
-//    if (source != dest) {
-//        dest->addEdge(this);
-//    }
     setFlag(ItemIsMovable);
     setFlag(ItemSendsGeometryChanges);
-//    adjust();
-//    graph->scene()->addItem(this);    // сразу добавляет на сцену
 }
 
 EdgeParent::~EdgeParent()
@@ -503,8 +496,9 @@ void EdgeCircle::readFromJson(const QJsonObject &json)
 
 QPointF EdgeCircle::peakArrow() const
 {
-    QPointF P0(mapFromScene(source->pos())), P1(centerPos());
-    qreal d = lineCC().length();
+    QLineF lCC = lineCC();
+    QPointF P0(lCC.p1()), P1(lCC.p2());
+    qreal d = lCC.length();
     qreal a = (Node::Radius * Node::Radius - radiusCircle * radiusCircle + d * d) / (2 * d);
     qreal h = sqrt(Node::Radius * Node::Radius - a * a);
     QPointF P2   (P0.x() + a * (P1.x() - P0.x()) / d,
@@ -517,10 +511,10 @@ QPointF EdgeCircle::peakArrow() const
 // Для столкновений и выделения
 QPainterPath EdgeCircle::shape() const {
     QPainterPath path1;
-    path1.addEllipse(centerPos(),
+    path1.addEllipse(mapFromScene(centerPos()),
                         radiusCircle + 2, radiusCircle + 2);
     QPainterPath path2;
-    path2.addEllipse(centerPos(),
+    path2.addEllipse(mapFromScene(centerPos()),
                         radiusCircle - 2, radiusCircle - 2);
     QPainterPath path3 = path1.subtracted(path2);
     return path3.united(pathText());
@@ -538,8 +532,8 @@ QRectF EdgeCircle::boundingRect() const
 void EdgeCircle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
     painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    painter->drawEllipse(static_cast<int>(centerPos().x() - radiusCircle),
-                     static_cast<int>(centerPos().y() - radiusCircle),
+    painter->drawEllipse(static_cast<int>(mapFromScene(centerPos()).x() - radiusCircle),
+                     static_cast<int>(mapFromScene(centerPos()).y() - radiusCircle),
                      2 * int(radiusCircle),
                      2 * int(radiusCircle));
     painter->setBrush((isSelected() ? Qt::cyan: Qt::black));
@@ -556,7 +550,7 @@ void EdgeCircle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 QPointF EdgeCircle::handlePos() const
 {
     QLineF lineToHandle;
-    lineToHandle.setP1(centerPos());
+    lineToHandle.setP1(mapFromScene(centerPos()));
     lineToHandle.setLength(radiusCircle);
     lineToHandle.setAngle(lineCC().angle());
     return lineToHandle.p2();
@@ -577,25 +571,22 @@ void EdgeCircle::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void EdgeCircle::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if (flHandlePress) {
-        qreal previosRad = radiusCircle;
-        radiusCircle = QLineF(centerPos(), event->pos()).length();
+        qreal previousRad = radiusCircle;
+        radiusCircle = QLineF(mapFromScene(centerPos()), event->pos()).length();
         if (!correctMove()) {
-            radiusCircle = previosRad;
+            radiusCircle = previousRad;
         }
         update();
     } else {
-        QPointF previosPos = pos();
         EdgeParent::mouseMoveEvent(event);
-        if (!correctMove()) {
-            setPos(previosPos);
-        }
     }
 }
 
 QPointF EdgeCircle::posText() const
 {
-    QLineF l1(centerPos(), peakArrow());
-    QLineF l2(mapFromScene(source->pos()), l1.center());
+    QLineF l1(mapFromScene(centerPos()), peakArrow());
+    l1.setLength(l1.length() * 0.8);
+    QLineF l2(mapFromScene(source->pos()), l1.p2());
     qreal anglRad = l2.angle() * PI / 180;
     qreal widthText, hightText;
     widthText = 8 * _textContent.size();
@@ -616,3 +607,26 @@ QPointF EdgeCircle::posText() const
     return l2.p2();
 }
 
+QVariant EdgeCircle::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+    switch (change) {
+    case ItemPositionChange:
+    {
+        qDebug() << ItemPositionChange;
+        QLineF lpp(pos(), value.toPointF());
+        qDebug() << lpp;
+        while (!correctMove(lpp.p2())) {
+            if (lpp.length() > 1) {
+                lpp.setLength(lpp.length() - 1);
+            } else {
+                lpp.setP2(lpp.p1());
+                break;
+            }
+        }
+        return QGraphicsItem::itemChange(change, lpp.p2());
+    }
+    default:
+        break;
+    };
+    return QGraphicsItem::itemChange(change, value);
+}

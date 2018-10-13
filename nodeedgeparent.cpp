@@ -48,7 +48,6 @@ void NodeEdgeParent::readFromJson(const QJsonObject &json)
 void NodeEdgeParent::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (event->button() == Qt::RightButton) {
-        qDebug() << "RightButton";
 //        scene()->clearSelection();
 //        setSelected(true);
 //        emit graph->editItem();

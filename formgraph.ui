@@ -84,6 +84,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnCheck">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="font">
         <font>
          <pointsize>10</pointsize>
