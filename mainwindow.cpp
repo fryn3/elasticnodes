@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     formGraph = ui->formGraph;
+
     connect(ui->actSave, &QAction::triggered, this, &MainWindow::graphSave);
     connect(ui->actSaveAs, &QAction::triggered, this, &MainWindow::graphSaveAs);
     connect(ui->actOpen, &QAction::triggered, this, &MainWindow::graphOpen);
@@ -25,7 +26,8 @@ void MainWindow::graphSave() const {
 }
 
 void MainWindow::graphSaveAs() {
-    QString fileName = QFileDialog::getSaveFileName(this, "Сохрани граф",
+    QString fileName = QFileDialog::getSaveFileName(this,
+                        "Сохранить файл",
                         "graph.graph",
                         "Graph Files (*.graph)");
     ui->formGraph->saveGraph(fileName);
@@ -33,7 +35,7 @@ void MainWindow::graphSaveAs() {
 
 void MainWindow::graphOpen() {
     QString fileName = QFileDialog::getOpenFileName(this,
-                        "Выберете граф", "", "Graph Files (*.graph)");
+                        "Открыть файл", "", "Graph Files (*.graph)");
     FormGraph *f = FormGraph::openGraph(fileName);
     if (!f) {
         qWarning("!f");
