@@ -37,11 +37,11 @@ Universal::Universal(QStringList data) : t(nullptr), f(nullptr) {
 
 Universal *Universal::readFromJson(const QJsonObject &json)
 {
-    if (!missKey(json, "Automat") || !json["Automat"].isObject()) {
+    if (missKey(json, "Automat") || !json["Automat"].isObject()) {
         return nullptr;
     }
     QJsonObject jsonA = json["Automat"].toObject();
-    if (!missKey(jsonA, "source") || !jsonA["source"].isArray()) {
+    if (missKey(jsonA, "source") || !jsonA["source"].isArray()) {
         return nullptr;
     }
     QStringList source;
