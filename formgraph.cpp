@@ -592,6 +592,8 @@ FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
         EdgeParent *e = EdgeParent::create(j.toObject(), g->ui->grafViewScene);
         g->edges.append(e);
     });
+    g->ui->btnConnectNode->setEnabled(false);
+    g->ui->btnDelete->setEnabled(false);
     g->ui->btnCheck->setEnabled(true);
     return g;
 }
