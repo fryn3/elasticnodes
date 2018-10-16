@@ -16,7 +16,6 @@ public:
     ~MainWindow();
     FormGraph *formGraph;
 protected slots:
-    void graphSave() const;
     void graphSaveAs();
     void graphOpen();
 private:

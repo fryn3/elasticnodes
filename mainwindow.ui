@@ -34,7 +34,6 @@
      <string>Файл</string>
     </property>
     <addaction name="actOpen"/>
-    <addaction name="actSave"/>
     <addaction name="actSaveAs"/>
     <addaction name="actExit"/>
    </widget>
@@ -57,7 +56,7 @@
   </action>
   <action name="actSaveAs">
    <property name="text">
-    <string>Сохранить как</string>
+    <string>Сохранить</string>
    </property>
   </action>
   <action name="actExit">
