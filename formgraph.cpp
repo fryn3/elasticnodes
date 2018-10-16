@@ -38,8 +38,8 @@ bool FormGraph::CreateAutomat(QStringList source)
         return false;
     }
     ui->lNameGraf->setText((automat->t->type() == Automata::Mili::Type ? "Автомат Мили": "Автомат Мура"));
-    ui->btnCheck->setEnabled(true);
     ui->lTip->setText(QString("Вых файл: OutFile.png"));
+    ui->btnCheck->setEnabled(true);
     return true;
 }
 
@@ -48,6 +48,7 @@ void FormGraph::CreateAutomat(Automata::Universal *_automat)
     automat = _automat;
     ui->lNameGraf->setText((automat->t->type() == Automata::Mili::Type ? "Автомат Мили": "Автомат Мура"));
     ui->lTip->setText(QString("Вых файл: OutFile.png"));
+    ui->btnCheck->setEnabled(true);
 }
 
 void FormGraph::closeEvent(QCloseEvent */*event*/)
@@ -66,26 +67,22 @@ void FormGraph::showInput()
         //dlgInput->eInput->setEnabled(false);
         dlgInput->hide();
     } else {
-        QGraphicsItem *it;
-        it = ui->grafViewScene->scene()->selectedItems().at(0);
+        NodeEdgeParent *it = dynamic_cast<NodeEdgeParent *>(ui->grafViewScene->scene()->selectedItems().at(0));
         //dlgInput->eInput->setEnabled(true);
-        if (Node *n = dynamic_cast<Node *>(it)) {
-            if (automat) {
+        if (automat) {
+            if (Node *n = dynamic_cast<Node *>(it)) {
                 dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpNode()));
                 dlgInput->lTipInput->setText(automat->t->tipNode());
-            } else {
-                dlgInput->lTipInput->setText("Введите текст");
-            }
-            dlgInput->eInput->setText(n->textContent());
-        } else if (EdgeParent *e = dynamic_cast<EdgeParent *>(it)) {
-            if (automat) {
+            } else if (EdgeParent *e = dynamic_cast<EdgeParent *>(it)) {
                 dlgInput->eInput->setValidator(new QRegExpValidator(automat->t->regExpEdge()));
                 dlgInput->lTipInput->setText(automat->t->tipEdge());
             } else {
-                dlgInput->lTipInput->setText("Введи текст");
+                qDebug() << "dynamic_cast<NodeEdgeParent *> == false";
             }
-            dlgInput->eInput->setText(e->textContent());
+        } else {
+            dlgInput->lTipInput->setText("Введи текст");
         }
+        dlgInput->eInput->setText(it->textContent());
 
         //dlgInput->show();
         //dlgInput->raise();
@@ -452,9 +449,8 @@ void FormGraph::sceneSelectionChanged()
     dlgInput->hide();
     QList<QGraphicsItem *> l = ui->grafViewScene->scene()->selectedItems();
     if (l.size() == 1) {
-        ui->lTip->setText("Выделена вершина.");
         if (Node *node = dynamic_cast<Node *>(l.at(0))) {
-            // Выделена вершина!
+            ui->lTip->setText("Выделена вершина.");
             ui->btnConnectNode->setEnabled(true);
             if (connFlag == 1) {
                 // Назначен "Источник"
@@ -482,8 +478,8 @@ void FormGraph::sceneSelectionChanged()
 
                 connFlag = 0;
                 _source = nullptr;
-            } else if (connFlag==3){
-
+            } else if (connFlag == 3){
+                qDebug() << "connFlag == 3";
             }
         } else {
             // Выделена стрелка
@@ -595,8 +591,5 @@ FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
         EdgeParent *e = EdgeParent::create(j.toObject(), g->ui->grafViewScene);
         g->edges.append(e);
     });
-    g->ui->btnConnectNode->setEnabled(false);
-    g->ui->btnDelete->setEnabled(false);
-    g->ui->btnCheck->setEnabled(true);
     return g;
 }
