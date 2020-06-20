@@ -19,7 +19,6 @@
 #include <QHeaderView>
 #include <QList>
 #include <QMessageBox>
-#include "automata.h"
 #include "graphwidget.h"
 #include "dlginput.h"
 
@@ -35,7 +34,6 @@ public:
     explicit FormGraph(QWidget *parent = nullptr);
     ~FormGraph() override;
     void closeEvent(QCloseEvent *event) override;
-    Automata::Universal *automat;
 
 private:
     Ui::FormGraph *ui;
@@ -53,19 +51,14 @@ public:
 signals:
 
 public slots:
-    bool CreateAutomat(QStringList source);
-    void CreateAutomat(Automata::Universal *_automat);
     void showInput();
     void onBtnCreateNodeClicked();
     void onBtnConnectNodeClicked();
     void onBtnDeleteClicked();
     void eInputTextChange();
     void onBtnApplyClicked();
-    void onBtnCheckClicked();
     void sceneSelectionChanged();
     void savePng(QString fileName) const;
-    void checkedTable();
-    void checkedMatrixStr();
     bool saveGraph(QString fileName, bool jsonFormat = false) const;
     void keyPressEvent(QKeyEvent *event) override;
 };

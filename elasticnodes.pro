@@ -1,10 +1,9 @@
 QT += widgets
 
 HEADERS += \
-        edge.h \
-        node.h \
-        graphwidget.h \
-    automata.h \
+    edge.h \
+    node.h \
+    graphwidget.h \
     nodeedgeparent.h \
     dlginput.h \
     formgraph.h \
@@ -12,11 +11,10 @@ HEADERS += \
     jsonfuncs.h
 
 SOURCES += \
-        edge.cpp \
-        main.cpp \
-        node.cpp \
-        graphwidget.cpp \
-    automata.cpp \
+    edge.cpp \
+    main.cpp \
+    node.cpp \
+    graphwidget.cpp \
     dlginput.cpp \
     nodeedgeparent.cpp \
     formgraph.cpp \
