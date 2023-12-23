@@ -13,6 +13,23 @@ protected:
     EdgeParent(Node *sourceNode, Node *destNode = nullptr, QString text = nullptr);
     EdgeParent(GraphWidget *graphWidget);
 public:
+
+        // Getter for the name of the edge
+    QString getName() const
+    {
+        return _name;
+    }
+
+    // Setter for the name of the edge
+    void setName(const QString& name)
+    {
+        _name = name;
+    }
+    // Setter for weight
+    void setWeight(int value) { weight = value; }
+    // Getter for weight
+    int getWeight() const { return weight; }
+
     virtual ~EdgeParent() override;
     void setTextContent(QString text) override;
     inline Node *sourceNode() const { return source; }
@@ -25,18 +42,36 @@ public:
     void readFromJson(const QJsonObject &json) override;
     static EdgeParent *create(const QJsonObject &json, GraphWidget *graphWidget);
 protected:
+    int weight;
     Node *source, *dest;
     qreal arrowSize;
     static int _idStatic;
     QPolygonF arrowPolygon(QPointF peak, qreal angle) const;
     virtual QPointF posText() const = 0;
+    virtual QPointF posTextWeight() const = 0;
+    virtual QPointF posTextName() const = 0;
     QPainterPath pathText() const;
+    QString _name;
 };
 
 
 class Edge : public EdgeParent
 {
 public:
+
+    QString getName() const
+    {
+        return _name;
+    }
+
+    void setName(const QString& name)
+    {
+        _name = name;
+    }
+
+    void setWeight(int value) { weight = value; }
+    int getWeight() const { return weight; }
+    
     Edge(Node *sourceNode, Node *destNode = nullptr, QString text = nullptr);
     Edge(const QJsonObject &json, GraphWidget *graphWidget);
 
@@ -53,6 +88,8 @@ protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
     QPointF newPosBezier() const;
     QPointF posText() const override;
+    QPointF posTextWeight() const override;
+    QPointF posTextName() const override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
     QPainterPath pathBezierCurve() const;
 };
@@ -60,6 +97,17 @@ protected:
 class EdgeCircle : public EdgeParent
 {
 public:
+    QString getName() const
+    {
+        return _name;
+    }
+    void setName(const QString& name)
+    {
+        _name = name;
+    }
+    void setWeight(int value) { weight = value; }
+    int getWeight() const { return weight; }
+    
     EdgeCircle(Node *sourceNode, QString text = nullptr);
     enum { Type = EdgeParent::Type + 2 };
     int type() const override { return Type; }
@@ -94,6 +142,8 @@ protected:
     QPainterPath shape() const override;
     QPointF peakArrow() const;
     QPointF posText() const override;
+    QPointF posTextWeight() const override;
+    QPointF posTextName() const override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 

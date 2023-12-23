@@ -299,6 +299,44 @@ QPointF Edge::posText() const
     return textPoint;
 }
 
+QPointF Edge::posTextWeight() const
+{
+    QPointF textPoint;
+    if (source != dest) {
+        QPointF midpoint = (source->pos() + dest->pos()) / 2;
+        qreal angle = qAtan2(dest->pos().y() - source->pos().y(), dest->pos().x() - source->pos().x());
+        qreal offset = Node::Radius + 10; 
+        qreal offsetX = offset * qCos(angle);
+        qreal offsetY = offset * qSin(angle);
+        QPointF adjustedMidpoint = midpoint + QPointF(offsetX, offsetY);
+
+        textPoint = adjustedMidpoint;
+    } else { // source == dest
+        textPoint = QPointF(boundingRect().center().x() - Node::Radius / 2, boundingRect().center().y());
+    }
+    return textPoint;
+}
+
+QPointF Edge::posTextName() const
+{
+    QPointF textPoint;
+    if (source != dest) {
+        QPointF midpoint = (source->pos() + dest->pos()) / 2;
+        qreal angle = qAtan2(dest->pos().y() - source->pos().y(), dest->pos().x() - source->pos().x());
+        qreal offset = Node::Radius + 10; 
+        qreal offsetX = offset * qCos(angle);
+        qreal offsetY = offset * qSin(angle);
+        QPointF adjustedMidpoint = midpoint + QPointF(offsetX, offsetY);
+        qreal oppositeAngle = angle + M_PI; 
+        qreal oppositeOffsetX = offset * qCos(oppositeAngle);
+        qreal oppositeOffsetY = offset * qSin(oppositeAngle);
+        textPoint = adjustedMidpoint + QPointF(oppositeOffsetX, oppositeOffsetY);
+    } else { // source == dest
+        textPoint = QPointF(boundingRect().center().x() - Node::Radius / 2, boundingRect().center().y());
+    }
+    return textPoint;
+}
+
 QPainterPath Edge::pathBezierCurve() const {
     QPainterPath path;
     qreal qOffset = 5;
@@ -410,6 +448,22 @@ void Edge::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
         peak = dest->pos() + QPointF(Node::Radius, 0);
 
     }
+     // Draw the edge name
+    painter->setPen(Qt::black);
+    painter->setFont(QFont("Arial", 10)); // Adjust the font and size as needed
+    painter->drawText(posTextName(), getName());
+
+   // Draw the weight near the edge
+    QPointF weightPos = posTextWeight(); // Calculate the position for the weight
+
+   // Set the font and color for the weight text
+    QFont font = painter->font();
+    font.setPointSize(10);
+    painter->setFont(font);
+    painter->setPen(Qt::black);
+    //Draw the weight text at the calculated position
+    painter->drawText(weightPos, QString::number(EdgeParent::weight));
+
     painter->setBrush((isSelected() ? Qt::cyan: Qt::black));
 //    painter->drawPolygon(QPolygonF() << peak << destArrowP1 << destArrowP2);
     painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
@@ -540,6 +594,20 @@ void EdgeCircle::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
     if (isSelected()) {
         painter->drawEllipse(handlePos(), SIZE_POINT - 1, SIZE_POINT - 1);  // размер точки
     }
+
+       // Draw the edge name
+    painter->setPen(Qt::black);
+    painter->setFont(QFont("Arial", 10)); // Adjust the font and size as needed
+    painter->drawText(posTextName(), getName());
+    // Draw the weight near the edge
+    QPointF weightPos = posTextWeight(); // Calculate the position for the weight
+    // Set the font and color for the weight text
+    QFont font = painter->font();
+    font.setPointSize(10);
+    painter->setFont(font);
+    painter->setPen(Qt::black);
+    //Draw the weight text at the calculated position
+    painter->drawText(weightPos, QString::number(EdgeParent::weight));
     painter->setPen(QPen((isSelected() ? Qt::cyan: Qt::black), 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     painter->drawPolygon(arrowPolygon(peakArrow(), angleArrow()));
     painter->setFont(QFont("Times", 11));
@@ -606,7 +674,43 @@ QPointF EdgeCircle::posText() const
     }
     return l2.p2();
 }
+QPointF EdgeCircle::posTextWeight() const
+{
+    QPointF textPoint;
+    if (source != dest) {
+        QPointF midpoint = (source->pos() + dest->pos()) / 2;
+        qreal angle = qAtan2(dest->pos().y() - source->pos().y(), dest->pos().x() - source->pos().x());
+        qreal offset = Node::Radius + 10; 
+        qreal offsetX = offset * qCos(angle);
+        qreal offsetY = offset * qSin(angle);
+        QPointF adjustedMidpoint = midpoint + QPointF(offsetX, offsetY);
 
+        textPoint = adjustedMidpoint;
+    } else { // source == dest
+        textPoint = QPointF(boundingRect().center().x() - Node::Radius / 2, boundingRect().center().y());
+    }
+    return textPoint;
+}
+
+QPointF EdgeCircle::posTextName() const
+{
+    QPointF textPoint;
+    if (source != dest) {
+        QPointF midpoint = (source->pos() + dest->pos()) / 2;
+        qreal angle = qAtan2(dest->pos().y() - source->pos().y(), dest->pos().x() - source->pos().x());
+        qreal offset = Node::Radius + 10; 
+        qreal offsetX = offset * qCos(angle);
+        qreal offsetY = offset * qSin(angle);
+        QPointF adjustedMidpoint = midpoint + QPointF(offsetX, offsetY);
+        qreal oppositeAngle = angle + M_PI; 
+        qreal oppositeOffsetX = offset * qCos(oppositeAngle);
+        qreal oppositeOffsetY = offset * qSin(oppositeAngle);
+        textPoint = adjustedMidpoint + QPointF(oppositeOffsetX, oppositeOffsetY);
+    } else { // source == dest
+        textPoint = QPointF(boundingRect().center().x() - Node::Radius / 10, boundingRect().center().y());
+    }
+    return textPoint;
+}
 QVariant EdgeCircle::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     switch (change) {
