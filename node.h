@@ -15,6 +15,8 @@ QT_END_NAMESPACE
 class Node : public NodeEdgeParent
 {
 public:
+    QString getName() const;
+    void setName(const QString& name);
     static const QPen _pen;
     Node(GraphWidget *graphWidget, QString text = nullptr);
     virtual ~Node() override;
@@ -37,6 +39,8 @@ protected:
     QPointF newPos;
     static int _idStatic;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+
+    QString _name;
 };
 
 #endif // NODE_H

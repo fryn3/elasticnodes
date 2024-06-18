@@ -44,6 +44,10 @@ private:
     // connFlag == 1 Надо отметить "Источник" потом "Получатель"
     // connFlag == 2 Надо отметить только "Получатель"
     int connFlag;
+
+    QVector<QVector<int>> adjacencyMatrix;
+    QVector<QVector<int>> incidenceMatrix;
+    
 public:
     QList <Node*> nodes;
     QList <EdgeParent*> edges;
@@ -61,6 +65,16 @@ public slots:
     void savePng(QString fileName) const;
     bool saveGraph(QString fileName, bool jsonFormat = false) const;
     void keyPressEvent(QKeyEvent *event) override;
+
+    QString getInputText(const QString &message);
+    void initMatrix();
+    void updateMatrixDisplay();
+    void initMatrixIncidence();
+    void updateMatrixDisplayIncidence();
+private slots:
+    void on_displayMatrix_clicked();
+
+    void on_incidenceMatrix_clicked();
 };
 
 #endif // FORMGRAPH_H

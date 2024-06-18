@@ -71,6 +71,8 @@ void FormGraph::onBtnCreateNodeClicked()
     bool flFinding = false;     // флаг нахождения, при решение с каким состоянием создавать вершину
     Node *node;
     node = new Node(ui->grafViewScene);
+    QString name = getInputText("Enter the name ");
+    node->setName(name);
     numNode = node->id();
     // Определяет сколько вершин будут появлятся на одной оси У
     int nodeInRow = 6;
@@ -88,6 +90,14 @@ void FormGraph::onBtnCreateNodeClicked()
     if (nodes.size()==9){
         ui->btnCreateNode->setEnabled(false);
     }
+}
+QString formgraph::getInputText(const QString &message){
+    bool ok;
+    QString input_text = QInputDialog::getText(0, "Input Dialog", message, QLineEdit::Normal, "", &ok);
+    if (ok && !input_text.isEmpty()) {
+        return input_text;
+    }
+    return "";
 }
 
 void FormGraph::onBtnConnectNodeClicked()
@@ -191,12 +201,20 @@ void FormGraph::sceneSelectionChanged()
                 connFlag = 2;
                 ui->lTip->setText("Выберите вершину куда будет проведена дуга.");
             } else if (connFlag == 2) {
+
+                QString text = getInputText("Enter the weight");
+                QString name = getInputText("Enter the name");
+                
                 // Нужно соединить с новой вершиной
                 EdgeParent *e;
                 if (_source == node) {
                     e = new EdgeCircle(_source);
+                    e->setWeight(text.toInt());
+                    e->setName(name);
                 } else {
                     e = new Edge(_source, node);
+                    e->setWeight(text.toInt());
+                    e->setName(name);
                 }
                 edges.append(e);
                 ui->btnConnectNode->setChecked(false);
@@ -314,4 +332,118 @@ FormGraph *FormGraph::openGraph(QString fileName, bool jsonFormat) {
     g->ui->btnConnectNode->setEnabled(false);
     g->ui->btnDelete->setEnabled(false);
     return g;
+}
+
+void formgraph::initMatrix(){
+    // Initialize the adjacency matrix with all elements set to zero
+    int size = Node::idStatic();
+    adjacencyMatrix.resize(size);
+    for (int i = 0; i < size; ++i) {
+        adjacencyMatrix[i].resize(size);
+        for (int j = 0; j < size; ++j) {
+            adjacencyMatrix[i][j] = 0;
+        }
+    }
+    // Iterate over the edges and populate the adjacency matrix
+    for (const EdgeParent* edge : edges) {
+        int sourceIndex = nodes.indexOf(edge->sourceNode());
+        int destIndex = nodes.indexOf(edge->destNode());
+        if (sourceIndex != -1 && destIndex != -1) {
+            adjacencyMatrix[sourceIndex][destIndex] = 1;
+        }
+    }
+}
+void formgraph::updateMatrixDisplay(){
+
+    // Set the number of rows and columns in the table widget
+    int numNodes = nodes.size();
+    ui->tableWidget->setRowCount(numNodes);
+    ui->tableWidget->setColumnCount(numNodes);
+
+    // Set the header labels for rows and columns
+   for (int i = 0; i < numNodes; ++i) {
+        QTableWidgetItem* rowHeader = new QTableWidgetItem(nodes[i]->getName());
+        QTableWidgetItem* colHeader = new QTableWidgetItem(nodes[i]->getName());
+        ui->tableWidget->setVerticalHeaderItem(i, rowHeader);
+        ui->tableWidget->setHorizontalHeaderItem(i, colHeader);
+    }
+    // Iterate over the adjacency matrix and set cell values
+    for (int row = 0; row < numNodes; ++row) {
+        for (int col = 0; col < numNodes; ++col) {
+            int value = adjacencyMatrix[row][col];
+            QTableWidgetItem* item = new QTableWidgetItem(QString::number(value));
+            ui->tableWidget->setItem(row, col, item);
+        }
+    }
+}
+
+void formgraph::on_displayMatrix_clicked()
+{
+    initMatrix();
+    updateMatrixDisplay();
+}
+
+
+
+void formgraph::initMatrixIncidence() {
+    int numNodes = Node::idStatic();
+    int numEdges = edges.size();
+
+    // Initialize the incidence matrix with all elements set to zero
+    incidenceMatrix.resize(numNodes);
+    for (int i = 0; i < numNodes; ++i) {
+        incidenceMatrix[i].resize(numEdges);
+        for (int j = 0; j < numEdges; ++j) {
+            incidenceMatrix[i][j] = 0;
+        }
+    }
+
+    // Iterate over the edges and populate the incidence matrix
+    for (int edgeIndex = 0; edgeIndex < numEdges; ++edgeIndex) {
+        const EdgeParent* edge = edges[edgeIndex];
+        int sourceIndex = nodes.indexOf(edge->sourceNode());
+        int destIndex = nodes.indexOf(edge->destNode());
+
+        if (sourceIndex != -1 && destIndex != -1) {
+            incidenceMatrix[sourceIndex][edgeIndex] = 1;
+            incidenceMatrix[destIndex][edgeIndex] = -1;  // Set destination node entry to -1
+        }
+    }
+}
+
+void formgraph::updateMatrixDisplayIncidence() {
+    // Clear the existing content in the table widget
+    ui->tableWidget_2->clear();
+
+    // Set the number of rows and columns in the table widget
+    int numNodes = nodes.size();
+    int numEdges = edges.size();
+    ui->tableWidget_2->setRowCount(numNodes);
+    ui->tableWidget_2->setColumnCount(numEdges);
+
+    // Set the header labels for rows (nodes)
+    for (int i = 0; i < numNodes; ++i) {
+        QTableWidgetItem* rowHeader = new QTableWidgetItem(nodes[i]->getName());
+        ui->tableWidget_2->setVerticalHeaderItem(i, rowHeader);
+    }
+
+    // Set the header labels for columns (edges)
+    for (int j = 0; j < numEdges; ++j) {
+        QTableWidgetItem* colHeader = new QTableWidgetItem(edges[j]->getName());
+        ui->tableWidget_2->setHorizontalHeaderItem(j, colHeader);
+    }
+
+    // Iterate over the incidence matrix and set cell values
+    for (int row = 0; row < numNodes; ++row) {
+        for (int col = 0; col < numEdges; ++col) {
+            int value = incidenceMatrix[row][col];
+            QTableWidgetItem* item = new QTableWidgetItem(QString::number(value));
+            ui->tableWidget_2->setItem(row, col, item);
+        }
+    }
+}
+
+void formgraph::on_incidenceMatrix_clicked() {
+    initMatrixIncidence();
+    updateMatrixDisplayIncidence();
 }

@@ -100,6 +100,11 @@ void Node::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     painter->drawEllipse(-Radius, -Radius, 2 * Radius, 2 * Radius);
     painter->setFont(QFont("Times", 12, QFont::Bold));
     painter->drawText(boundingRect(), Qt::AlignCenter, _textContent);
+    // Draw the node name
+    painter->setPen(Qt::black);
+    painter->setFont(QFont("Arial", 10)); 
+    QRectF textRect = boundingRect().adjusted(0, Radius / 2, 0, 0); 
+    painter->drawText(textRect, Qt::AlignHCenter | Qt::AlignTop, getName()); 
 }
 
 QVariant Node::itemChange(GraphicsItemChange change, const QVariant &value)
@@ -132,4 +137,12 @@ void Node::removeEdge(EdgeParent *edge)
             break;
         }
     }
+}
+QString Node::getName() const
+{
+    return _name;
+}
+void Node::setName(const QString& name)
+{
+    _name = name;
 }
